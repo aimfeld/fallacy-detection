@@ -10,9 +10,11 @@ from langchain.prompts import PromptTemplate
 
 LLM_GPT_4 = "gpt_4"
 LLM_GPT_4O = "gpt_4o"
-LLM_SONNET = "sonnet"
-LLM_GEMINI = "gemini"
-LLM_LLAMA = "llama"
+LLM_GPT_4O_MINI = "gpt_4o_mini"
+LLM_GPT_O1_MINI = "gpt_o1_mini"
+LLM_SONNET = "sonnet_3_5"
+LLM_GEMINI = "gemini_1_5_pro"
+LLM_LLAMA = "llama_3_8b"
 
 # Initialize LangChain
 def init_langchain():
@@ -30,21 +32,39 @@ LLMs = dict[str, Runnable]
 def get_llms(llm_names: list[str]) -> LLMs:
     llms: LLMs = {}
 
+    # OpenAI models: https://platform.openai.com/docs/models
     if LLM_GPT_4 in llm_names:
-        # https://python.langchain.com/docs/integrations/platforms/openai/
+        # https://platform.openai.com/docs/models
         llms[LLM_GPT_4] = ChatOpenAI(
             openai_api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-4",
+            model="gpt-4-0613",
             temperature=0,
             timeout=3000,
             max_retries=3,
         )
 
     if LLM_GPT_4O in llm_names:
-        # https://python.langchain.com/docs/integrations/platforms/openai/
         llms[LLM_GPT_4O] = ChatOpenAI(
             openai_api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-4o",
+            model="gpt-4o-2024-08-06",
+            temperature=0,
+            timeout=3000,
+            max_retries=3,
+        )
+
+    if LLM_GPT_4O_MINI in llm_names:
+        llms[LLM_GPT_4O_MINI] = ChatOpenAI(
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            model="gpt-4o-mini-2024-07-18",
+            temperature=0,
+            timeout=3000,
+            max_retries=3,
+        )
+
+    if LLM_GPT_O1_MINI in llm_names:
+        llms[LLM_GPT_O1_MINI] = ChatOpenAI(
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            model="gpt-o1-mini-2024-09-12",
             temperature=0,
             timeout=3000,
             max_retries=3,
