@@ -1,0 +1,19 @@
+name: hslu-thesis
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11  # Specify your desired Python version
+  - numpy
+  - pandas
+  - matplotlib
+  - python-dotenv
+  - jupyter
+  - langchain
+  - langchain-openai
+  - langchain-anthropic
+  - langchain-community
+  - huggingface_hub
+  - pip
+  - pip:
+    - langchain-google-vertexai
