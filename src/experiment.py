@@ -1,11 +1,11 @@
 import pandas as pd
 from .llms import LLMs
 from .utils import log
+from .fallacies import create_fallacy_df
 from time import sleep
 
 # Constants
 RESPONSE_ERROR = 'error'
-
 
 def get_fallacy_identification_df() -> pd.DataFrame:
     try:
@@ -14,13 +14,11 @@ def get_fallacy_identification_df() -> pd.DataFrame:
 
         log("Loaded existing fallacy identification dataframe from CSV.")
     except FileNotFoundError:
-        df = pd.read_json('fallacies/step_fallacy.test.jsonl', lines=True)
-        df['step'] = df['step'].apply(_remove_square_brackets)
+        df = create_fallacy_df()
 
         log("Created new fallacy identification dataframe from JSONL.")
 
     return df
-
 
 def save_fallacy_identification_df(df_fallacies: pd.DataFrame):
     df_fallacies.to_csv('data/fallacy_identification.csv', index=False)
@@ -72,5 +70,4 @@ def run_fallacy_identification(df_fallacies: pd.DataFrame, llms: LLMs, keep_exis
                 sleep(sleep_seconds)
 
 
-def _remove_square_brackets(string):
-    return string.replace("[", "").replace("]", "")
+
