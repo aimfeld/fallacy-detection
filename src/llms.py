@@ -7,7 +7,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEndpoint
 from enum import Enum
 
-class LLMLabel(Enum):
+class LLM(Enum):
     GPT_4 = "gpt_4"
     GPT_4O = "gpt_4o"
     GPT_4O_MINI = "gpt_4o_mini"
@@ -17,9 +17,23 @@ class LLMLabel(Enum):
     GEMINI_1_5_FLASH = "gemini_1_5_flash"
     LLAMA_3_1_70B = "llama_3_1_70b"
 
+    @property
+    def label(self):
+        return LLMLabel[self.name].value
+
+class LLMLabel(Enum):
+    GPT_4 = "GPT-4"
+    GPT_4O = "GPT-4o"
+    GPT_4O_MINI = "GPT-4o Mini"
+    GPT_O1_MINI = "GPT-o1 Mini"
+    SONNET = "Claude Sonnet 3.5"
+    GEMINI_1_5_PRO = "Gemini 1.5 Pro"
+    GEMINI_1_5_FLASH = "Gemini 1.5 Flash"
+    LLAMA_3_1_70B = "Llama 3.1 70B"
+
 
 # Type definitions
-LLMs = dict[LLMLabel, Runnable]
+LLMs = dict[LLM, Runnable]
 
 
 # Initialize LangChain
@@ -30,13 +44,13 @@ def init_langchain():
 
 
 # Get the LLMs
-def get_llms(llm_names: list[LLMLabel]) -> LLMs:
+def get_llms(llm_names: list[LLM]) -> LLMs:
     llms: LLMs = {}
 
     # OpenAI models: https://platform.openai.com/docs/models
-    if LLMLabel.GPT_4 in llm_names:
+    if LLM.GPT_4 in llm_names:
         # https://platform.openai.com/docs/models
-        llms[LLMLabel.GPT_4] = ChatOpenAI(
+        llms[LLM.GPT_4] = ChatOpenAI(
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-4-0613",
             temperature=0,
@@ -44,8 +58,8 @@ def get_llms(llm_names: list[LLMLabel]) -> LLMs:
             max_retries=3,
         )
 
-    if LLMLabel.GPT_4O in llm_names:
-        llms[LLMLabel.GPT_4O] = ChatOpenAI(
+    if LLM.GPT_4O in llm_names:
+        llms[LLM.GPT_4O] = ChatOpenAI(
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-4o-2024-08-06",
             temperature=0,
@@ -53,8 +67,8 @@ def get_llms(llm_names: list[LLMLabel]) -> LLMs:
             max_retries=3,
         )
 
-    if LLMLabel.GPT_4O_MINI in llm_names:
-        llms[LLMLabel.GPT_4O_MINI] = ChatOpenAI(
+    if LLM.GPT_4O_MINI in llm_names:
+        llms[LLM.GPT_4O_MINI] = ChatOpenAI(
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-4o-mini-2024-07-18",
             temperature=0,
@@ -62,8 +76,8 @@ def get_llms(llm_names: list[LLMLabel]) -> LLMs:
             max_retries=3,
         )
 
-    if LLMLabel.GPT_O1_MINI in llm_names:
-        llms[LLMLabel.GPT_O1_MINI] = ChatOpenAI(
+    if LLM.GPT_O1_MINI in llm_names:
+        llms[LLM.GPT_O1_MINI] = ChatOpenAI(
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-o1-mini-2024-09-12",
             temperature=0,
@@ -71,9 +85,9 @@ def get_llms(llm_names: list[LLMLabel]) -> LLMs:
             max_retries=3,
         )
 
-    if LLMLabel.SONNET in llm_names:
+    if LLM.SONNET in llm_names:
         # https://python.langchain.com/docs/integrations/platforms/anthropic/
-        llms[LLMLabel.SONNET] = ChatAnthropic(
+        llms[LLM.SONNET] = ChatAnthropic(
             api_key=os.getenv("ANTHROPIC_API_KEY"),
             model="claude-3-5-sonnet-20240620",
             temperature=0,
@@ -81,8 +95,8 @@ def get_llms(llm_names: list[LLMLabel]) -> LLMs:
             max_retries=3,
         )
 
-    if LLMLabel.GEMINI_1_5_PRO in llm_names:
-        llms[LLMLabel.GEMINI_1_5_PRO] = ChatGoogleGenerativeAI(
+    if LLM.GEMINI_1_5_PRO in llm_names:
+        llms[LLM.GEMINI_1_5_PRO] = ChatGoogleGenerativeAI(
             api_key=os.getenv("GOOGLE_API_KEY"),
             model="gemini-1.5-pro-002",
             temperature=0,
@@ -90,8 +104,8 @@ def get_llms(llm_names: list[LLMLabel]) -> LLMs:
             max_retries=3,
         )
 
-    if LLMLabel.GEMINI_1_5_FLASH in llm_names:
-        llms[LLMLabel.GEMINI_1_5_FLASH] = ChatGoogleGenerativeAI(
+    if LLM.GEMINI_1_5_FLASH in llm_names:
+        llms[LLM.GEMINI_1_5_FLASH] = ChatGoogleGenerativeAI(
             api_key=os.getenv("GOOGLE_API_KEY"),
             model="gemini-1.5-flash-002",
             temperature=0,
@@ -99,12 +113,13 @@ def get_llms(llm_names: list[LLMLabel]) -> LLMs:
             max_retries=3,
         )
 
-    if LLMLabel.LLAMA_3_1_70B in llm_names:
-        llms[LLMLabel.LLAMA_3_1_70B] = HuggingFaceEndpoint(
+    if LLM.LLAMA_3_1_70B in llm_names:
+        llms[LLM.LLAMA_3_1_70B] = HuggingFaceEndpoint(
             huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
-            # repo_id="meta-llama/Meta-Llama-3.1-70B-Instruct",
-            repo_id="meta-llama/Meta-Llama-3-8B-Instruct",
-            # max_new_tokens=3, # Suppress explanation of response.
+            # repo_id="meta-llama/Meta-Llama-3.1-405B-Instruct",
+            repo_id="meta-llama/Meta-Llama-3.1-70B-Instruct",
+            # repo_id="meta-llama/Meta-Llama-3-8B-Instruct",
+            max_new_tokens=3, # Suppress explanation of response.
             temperature=0.1 # 0 doesn't work
         )
 
