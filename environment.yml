@@ -14,7 +14,6 @@ dependencies:
   - langchain-openai
   - langchain-anthropic
   - langchain-community
+  - langchain-google-genai
   - huggingface_hub
   - pip
-  - pip:
-    - langchain-google-vertexai
