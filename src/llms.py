@@ -3,10 +3,8 @@ import os
 from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
-from langchain_google_vertexai import ChatVertexAI
-from langchain_community.llms import HuggingFaceEndpoint
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import HuggingFaceEndpoint
 from enum import Enum
 
 class LLMLabel(Enum):
@@ -15,8 +13,9 @@ class LLMLabel(Enum):
     GPT_4O_MINI = "gpt_4o_mini"
     GPT_O1_MINI = "gpt_o1_mini" # Not working yet
     SONNET = "sonnet_3_5"
-    GEMINI = "gemini_1_5_pro"
-    LLAMA = "llama_3_8b"
+    GEMINI_1_5_PRO = "gemini_1_5_pro"
+    GEMINI_1_5_FLASH = "gemini_1_5_flash"
+    LLAMA_3_1_70B = "llama_3_1_70b"
 
 
 # Type definitions
@@ -28,8 +27,6 @@ def init_langchain():
     # Use the LangChain API key as needed (e.g., for tracing)
     os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
     os.environ["LANGCHAIN_TRACING_V2"] = os.getenv("LANGCHAIN_TRACING_V2")
-
-    os.environ["HUGGINGFACEHUB_API_TOKEN"] = os.getenv("HUGGINGFACEHUB_API_TOKEN")
 
 
 # Get the LLMs
@@ -84,28 +81,31 @@ def get_llms(llm_names: list[LLMLabel]) -> LLMs:
             max_retries=3,
         )
 
-    if LLMLabel.GEMINI in llm_names:
-        # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
-        llms[LLMLabel.GEMINI] = ChatVertexAI(
-            api_key=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+    if LLMLabel.GEMINI_1_5_PRO in llm_names:
+        llms[LLMLabel.GEMINI_1_5_PRO] = ChatGoogleGenerativeAI(
+            api_key=os.getenv("GOOGLE_API_KEY"),
             model="gemini-1.5-pro-002",
             temperature=0,
             timeout=3000,
             max_retries=3,
         )
 
-    if LLMLabel.LLAMA in llm_names:
-        hugging_face_endpoint = HuggingFaceEndpoint(
-            # repo_id="meta-llama/Meta-Llama-3.1-405B-Instruct",
-            # repo_id="meta-llama/Meta-Llama-3.1-8B-Instruct",
+    if LLMLabel.GEMINI_1_5_FLASH in llm_names:
+        llms[LLMLabel.GEMINI_1_5_FLASH] = ChatGoogleGenerativeAI(
+            api_key=os.getenv("GOOGLE_API_KEY"),
+            model="gemini-1.5-flash-002",
+            temperature=0,
+            timeout=3000,
+            max_retries=3,
+        )
+
+    if LLMLabel.LLAMA_3_1_70B in llm_names:
+        llms[LLMLabel.LLAMA_3_1_70B] = HuggingFaceEndpoint(
+            huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+            # repo_id="meta-llama/Meta-Llama-3.1-70B-Instruct",
             repo_id="meta-llama/Meta-Llama-3-8B-Instruct",
-            max_new_tokens=1, # Suppress explanation of response.
+            # max_new_tokens=3, # Suppress explanation of response.
             temperature=0.1 # 0 doesn't work
         )
-        prompt_template = PromptTemplate(
-            input_variables=["question"],
-            template="Question: {question}\n\nAnswer:"
-        )
-        llms[LLMLabel.LLAMA] = LLMChain(llm=hugging_face_endpoint, prompt=prompt_template)
 
     return llms
