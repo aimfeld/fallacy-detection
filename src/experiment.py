@@ -51,7 +51,8 @@ def run_fallacy_identification(df_fallacies: pd.DataFrame, llms: LLMs, keep_exis
                 # log(f"Response from LLM {llm_name.value}: {response}")
 
                 # Truncate the response to 10 characters in case instructions are ignored
-                df_fallacies.at[index, response_column] = response.content.replace("\n", " ").strip()[0:10]
+                response_text = response if isinstance(response, str) else response.content
+                df_fallacies.at[index, response_column] = response_text.replace("\n", " ").strip()[0:10]
 
             except Exception as e:
                 log(f"Error invoking LLM {llm_name.value}: {e}")
