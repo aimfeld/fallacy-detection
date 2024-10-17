@@ -1,6 +1,7 @@
 import pandas as pd
 from .llms import LLMs
 from .utils import log
+from time import sleep
 
 # Constants
 RESPONSE_ERROR = 'error'
@@ -26,7 +27,8 @@ def save_fallacy_identification_df(df_fallacies: pd.DataFrame):
 
 
 # Run the fallacy identification experiment, preserving existing responses if desired.
-def run_fallacy_identification(df_fallacies: pd.DataFrame, llms: LLMs, keep_existing_responses: bool = True):
+def run_fallacy_identification(df_fallacies: pd.DataFrame, llms: LLMs, keep_existing_responses: bool = True,
+                               sleep_seconds: float = 0):
     for llm_name, llm in llms.items():
         response_column = f"{llm_name.value}_response"
         # Add a column to the dataframe for each LLM if it doesn't exist
@@ -47,7 +49,7 @@ def run_fallacy_identification(df_fallacies: pd.DataFrame, llms: LLMs, keep_exis
             try:
                 response = llm.invoke(prompt)
                 # log(f"Response from LLM {llm_name.value}: {response}")
-                
+
                 # Truncate the response to 10 characters in case instructions are ignored
                 df_fallacies.at[index, response_column] = response.content.replace("\n", " ").strip()[0:10]
 
@@ -63,6 +65,10 @@ def run_fallacy_identification(df_fallacies: pd.DataFrame, llms: LLMs, keep_exis
 
             if response_count % 100 == 0:
                 log(f"Processed {response_count} responses for LLM {llm_name.value} (index={index}).")
+
+            # Sleep between requests if specified
+            if sleep_seconds > 0:
+                sleep(sleep_seconds)
 
 
 def _remove_square_brackets(string):
