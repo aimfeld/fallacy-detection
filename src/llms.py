@@ -7,12 +7,15 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEndpoint
 from enum import Enum
 
+# LLM keys
 class LLM(Enum):
     GPT_4 = "gpt_4"
     GPT_4O = "gpt_4o"
     GPT_4O_MINI = "gpt_4o_mini"
     GPT_O1_MINI = "gpt_o1_mini" # Not working yet
-    SONNET = "sonnet_3_5"
+    CLAUDE_3_5_SONNET = "claude_3_5_sonnet"
+    CLAUDE_3_OPUS = "claude_3_opus"
+    CLAUDE_3_HAIKU = "claude_3_haiku"
     GEMINI_1_5_PRO = "gemini_1_5_pro"
     GEMINI_1_5_FLASH = "gemini_1_5_flash"
     LLAMA_3_1_70B = "llama_3_1_70b"
@@ -21,12 +24,15 @@ class LLM(Enum):
     def label(self):
         return LLMLabel[self.name].value
 
+# LLM labels for display
 class LLMLabel(Enum):
     GPT_4 = "GPT-4"
     GPT_4O = "GPT-4o"
     GPT_4O_MINI = "GPT-4o Mini"
     GPT_O1_MINI = "GPT-o1 Mini"
-    SONNET = "Claude Sonnet 3.5"
+    CLAUDE_3_5_SONNET = "Claude 3.5 Sonnet"
+    CLAUDE_3_OPUS = "Claude 3 Opus"
+    CLAUDE_3_HAIKU = "Claude 3 Haiku"
     GEMINI_1_5_PRO = "Gemini 1.5 Pro"
     GEMINI_1_5_FLASH = "Gemini 1.5 Flash"
     LLAMA_3_1_70B = "Llama 3.1 70B"
@@ -85,11 +91,31 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             max_retries=3,
         )
 
-    if LLM.SONNET in llm_names:
+    if LLM.CLAUDE_3_5_SONNET in llm_names:
         # https://python.langchain.com/docs/integrations/platforms/anthropic/
-        llms[LLM.SONNET] = ChatAnthropic(
+        llms[LLM.CLAUDE_3_5_SONNET] = ChatAnthropic(
             api_key=os.getenv("ANTHROPIC_API_KEY"),
             model="claude-3-5-sonnet-20240620",
+            temperature=0,
+            timeout=3000,
+            max_retries=3,
+        )
+
+    if LLM.CLAUDE_3_OPUS in llm_names:
+        # https://python.langchain.com/docs/integrations/platforms/anthropic/
+        llms[LLM.CLAUDE_3_OPUS] = ChatAnthropic(
+            api_key=os.getenv("ANTHROPIC_API_KEY"),
+            model="claude-3-opus-20240229",
+            temperature=0,
+            timeout=3000,
+            max_retries=3,
+        )
+
+    if LLM.CLAUDE_3_HAIKU in llm_names:
+        # https://python.langchain.com/docs/integrations/platforms/anthropic/
+        llms[LLM.CLAUDE_3_HAIKU] = ChatAnthropic(
+            api_key=os.getenv("ANTHROPIC_API_KEY"),
+            model="claude-3-haiku-20240307",
             temperature=0,
             timeout=3000,
             max_retries=3,

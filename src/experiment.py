@@ -7,26 +7,26 @@ from time import sleep
 # Constants
 RESPONSE_ERROR = 'error'
 
-def get_fallacy_identification_df() -> pd.DataFrame:
+def get_fallacy_df(filename: str) -> pd.DataFrame:
     try:
-        df = pd.read_csv('data/fallacy_identification.csv')
+        df = pd.read_csv(filename)
         df = df.fillna('')
 
-        log("Loaded existing fallacy identification dataframe from CSV.")
+        log(f"Loaded existing fallacy dataframe from {filename}.")
     except FileNotFoundError:
         df = create_fallacy_df()
 
-        log("Created new fallacy identification dataframe from JSONL.")
+        log("Created new fallacy identification dataframe.")
 
     return df
 
-def save_fallacy_identification_df(df_fallacies: pd.DataFrame):
-    df_fallacies.to_csv('data/fallacy_identification.csv', index=False)
+def save_fallacy_df(df_fallacies: pd.DataFrame, filename: str):
+    df_fallacies.to_csv(filename, index=False)
 
 
 # Run the fallacy identification experiment, preserving existing responses if desired.
-def run_fallacy_identification(df_fallacies: pd.DataFrame, llms: LLMs, keep_existing_responses: bool = True,
-                               sleep_seconds: float = 0):
+def run_fallacy_identification_zero_shot(df_fallacies: pd.DataFrame, llms: LLMs, keep_existing_responses: bool = True,
+                                         sleep_seconds: float = 0):
     for llm_name, llm in llms.items():
         response_column = f"{llm_name.value}_response"
         # Add a column to the dataframe for each LLM if it doesn't exist
@@ -60,7 +60,7 @@ def run_fallacy_identification(df_fallacies: pd.DataFrame, llms: LLMs, keep_exis
             # Saving intermediate results
             response_count += 1
             if response_count % 10 == 0:
-                save_fallacy_identification_df(df_fallacies)
+                save_fallacy_df(df_fallacies, 'data/fallacy_identification_zero_shot.csv')
 
             if response_count % 100 == 0:
                 log(f"Processed {response_count} responses for LLM {llm_name.value} (index={index}).")
