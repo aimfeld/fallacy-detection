@@ -1,3 +1,6 @@
+"""
+Utility functions
+"""
 from datetime import datetime
 
 # Log message with timestamp

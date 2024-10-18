@@ -1,0 +1,28 @@
+"""
+This module contains functions for plotting data.
+"""
+import seaborn as sns
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
+                    hue: str = None, legend_title: str = None, legend_anchor: tuple = None,
+                    annotate: bool = False):
+    _, ax = plt.subplots(figsize=figsize)
+    sns.barplot(x='Accuracy', y='index', data=data, hue=hue, ax=ax)
+    plt.title(title)
+    plt.xlabel('Accuracy (%)')
+    plt.ylabel('')
+
+    # Set x-axis limits, start from 50% (random guessing)
+    ax.set_xlim(50, 100)
+
+    if annotate:
+        for i in ax.containers:
+            ax.bar_label(i, label_type='center', color='white', fmt='%.1f%%', fontsize=9)
+
+    if hue and legend_title and legend_anchor:
+        plt.legend(loc='upper right', bbox_to_anchor=legend_anchor, title=legend_title)
+
+    plt.show()

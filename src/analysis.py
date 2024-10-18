@@ -1,3 +1,6 @@
+"""
+This module contains functions for analyzing the fallacy experiments.
+"""
 import numpy as np
 import pandas as pd
 from .llms import LLM

@@ -1,3 +1,6 @@
+"""
+LLMs (Large Language Models) for Fallacy Detection.
+"""
 import os
 
 from langchain_core.runnables import Runnable

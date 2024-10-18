@@ -1,3 +1,6 @@
+"""
+This module contains the main experiment logic.
+"""
 import pandas as pd
 from .llms import LLMs
 from .utils import log
