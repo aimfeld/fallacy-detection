@@ -20,7 +20,10 @@ def score_fallacy_identification(df_fallacies: pd.DataFrame):
 
 def _get_fallacy_identification_score(label: int, response: str):
     filtered_response = response.lower()
-    if "no" in filtered_response:
+    if len(filtered_response) > 5:
+        # Answers like "I don't know" or "Yes. No. No. Yes. Yes." are invalid
+        return pd.NA
+    elif "no" in filtered_response:
         response_label = 1
     elif "yes" in filtered_response:
         response_label = 0

@@ -51,9 +51,9 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
                 response = llm.invoke(prompt)
                 # log(f"Response from LLM {llm_name.value}: {response}")
 
-                # Truncate the response to 10 characters in case instructions are ignored
+                # Huggingface endpoint returns a string, the other LLMs return a response object
                 response_text = response if isinstance(response, str) else response.content
-                df_fallacies.at[index, response_column] = response_text.replace("\n", " ").strip()[0:10]
+                df_fallacies.at[index, response_column] = response_text.replace("\n", " ").strip()
 
             except Exception as e:
                 log(f"Error invoking LLM {llm_name.value}: {e}")
