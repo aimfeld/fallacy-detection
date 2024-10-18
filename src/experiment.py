@@ -27,9 +27,9 @@ def save_fallacy_df(df_fallacies: pd.DataFrame, filename: str):
     df_fallacies.to_csv(filename, index=False)
 
 
-# Run the fallacy identification experiment, preserving existing responses if desired.
-def run_fallacy_identification_zero_shot(df_fallacies: pd.DataFrame, llms: LLMs, keep_existing_responses: bool = True,
-                                         sleep_seconds: float = 0):
+# Run experiment 1: fallacy identification with zero-shot prompt
+def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: str, llms: LLMs,
+                   keep_existing_responses: bool = True, sleep_seconds: float = 0):
     for llm_name, llm in llms.items():
         response_column = f"{llm_name.value}_response"
         # Add a column to the dataframe for each LLM if it doesn't exist
@@ -44,7 +44,7 @@ def run_fallacy_identification_zero_shot(df_fallacies: pd.DataFrame, llms: LLMs,
                 continue
 
             # Get the response from the LLM
-            prompt = f"Is the following reasoning step correct? You can only answer \"Yes\" or \"No\".\n{row['step']}"
+            prompt = prompt_template.replace('[step]', row['step'])
             # log(f"Prompting LLM {llm_name.value}: {prompt}")
 
             try:
@@ -63,7 +63,7 @@ def run_fallacy_identification_zero_shot(df_fallacies: pd.DataFrame, llms: LLMs,
             # Saving intermediate results
             response_count += 1
             if response_count % 10 == 0:
-                save_fallacy_df(df_fallacies, 'data/fallacy_identification_zero_shot.csv')
+                save_fallacy_df(df_fallacies, filename)
 
             if response_count % 100 == 0:
                 log(f"Processed {response_count} responses for LLM {llm_name.value} (index={index}).")
@@ -71,6 +71,4 @@ def run_fallacy_identification_zero_shot(df_fallacies: pd.DataFrame, llms: LLMs,
             # Sleep between requests if specified
             if sleep_seconds > 0:
                 sleep(sleep_seconds)
-
-
 
