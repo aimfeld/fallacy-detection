@@ -21,6 +21,7 @@ class LLM(Enum):
     CLAUDE_3_HAIKU = "claude_3_haiku"
     GEMINI_1_5_PRO = "gemini_1_5_pro"
     GEMINI_1_5_FLASH = "gemini_1_5_flash"
+    GEMINI_1_5_FLASH_8B = "gemini_1_5_flash_8b"
     LLAMA_3_1_70B = "llama_3_1_70b"
 
     @property
@@ -38,6 +39,7 @@ class LLMLabel(Enum):
     CLAUDE_3_HAIKU = "Claude 3 Haiku"
     GEMINI_1_5_PRO = "Gemini 1.5 Pro"
     GEMINI_1_5_FLASH = "Gemini 1.5 Flash"
+    GEMINI_1_5_FLASH_8B = "Gemini 1.5 Flash 8B"
     LLAMA_3_1_70B = "Llama 3.1 70B"
 
 
@@ -137,6 +139,15 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
         llms[LLM.GEMINI_1_5_FLASH] = ChatGoogleGenerativeAI(
             api_key=os.getenv("GOOGLE_API_KEY"),
             model="gemini-1.5-flash-002",
+            temperature=0,
+            timeout=3000,
+            max_retries=3,
+        )
+
+    if LLM.GEMINI_1_5_FLASH_8B in llm_names:
+        llms[LLM.GEMINI_1_5_FLASH_8B] = ChatGoogleGenerativeAI(
+            api_key=os.getenv("GOOGLE_API_KEY"),
+            model="gemini-1.5-flash-8b-001",
             temperature=0,
             timeout=3000,
             max_retries=3,
