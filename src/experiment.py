@@ -37,6 +37,7 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
             df_fallacies[response_column] = ''
 
         response_count = 0
+        error_count = 0
 
         for index, row in df_fallacies.iterrows():
             # Continue if a valid response already exists
@@ -59,6 +60,7 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
                 log(f"Error invoking LLM {llm_name.value}: {e}")
 
                 df_fallacies.at[index, response_column] = RESPONSE_ERROR
+                error_count += 1
 
             # Saving intermediate results
             response_count += 1
@@ -67,6 +69,10 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
 
             if response_count % 100 == 0:
                 log(f"Processed {response_count} responses for LLM {llm_name.value} (index={index}).")
+
+            if error_count > 30:
+                log(f"Error count too high for LLM {llm_name.value}, skipping model.")
+                break
 
             # Sleep between requests if specified
             if sleep_seconds > 0:
