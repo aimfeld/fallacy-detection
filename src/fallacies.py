@@ -24,11 +24,11 @@ def _add_taxonomy(df_fallacies):
 
     df_fallacies['category'] = df_fallacies.apply(lambda row: 'formal' if row['fallacy'] in taxonomy['formal'] else 'informal', axis=1)
 
-    type_map = {}
-    for fallacy_type, fallacies in taxonomy.items():
-        if fallacy_type in ['all', 'formal', 'informal']:
+    subcategory_map = {}
+    for subcategory, fallacies in taxonomy.items():
+        if subcategory in ['all', 'formal', 'informal']:
             continue
         for fallacy in fallacies:
-            type_map[fallacy] = fallacy_type
+            subcategory_map[fallacy] = subcategory
 
-    df_fallacies['type'] = df_fallacies.apply(lambda row: type_map[row['fallacy']], axis=1)
+    df_fallacies['subcategory'] = df_fallacies.apply(lambda row: subcategory_map[row['fallacy']], axis=1)

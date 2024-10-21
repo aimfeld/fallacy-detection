@@ -34,18 +34,27 @@ def _get_fallacy_identification_score(label: int, response: str):
     return 1 if response_label == label else 0
 
 
-def get_fallacy_identification_accuracies(df_fallacies: pd.DataFrame, groupby: list[str] = None):
-    accuracies = {}
-    for llm in LLM:
-        score_column = llm.value + '_score'
-        if score_column in df_fallacies.columns:
-            # Invalid responses (NA) are not included in the mean calculation
-            # There are very few invalid responses, e.g. due to politically incorrect language in the prompt.
-            # In rare cases, the models refuse to answer with "Yes" or "No", e.g. when the prompt is a question.
-            # The models are not penalized for these invalid responses.
-            mean_score = df_fallacies[score_column].mean() if groupby is None \
-                else df_fallacies.groupby(groupby)[score_column].mean()
-            accuracies[llm.label] = np.round(mean_score * 100, 1)
+def get_accuracies(df_fallacies: pd.DataFrame):
+    group_columns = ['category', 'subcategory', 'fallacy']
+    score_columns = group_columns + [llm.value + '_score' for llm in LLM if
+                                     llm.value + '_score' in df_fallacies.columns]
 
-    columns = ['Accuracy'] if groupby is None else None
-    return pd.DataFrame.from_dict(accuracies, orient='index', columns=columns)
+    # Rename LLM columns
+    df_scores = df_fallacies[score_columns]
+    df_scores.columns = group_columns + [llm.label for llm in LLM if llm.value + '_score' in df_scores.columns]
+
+    # Calculate macro-averages, giving equal weight to each category, subcategory, and fallacy
+    df_type_accuracies = df_scores.groupby(['category', 'subcategory', 'fallacy']).mean()
+    df_subcategory_accuracies = df_type_accuracies.groupby(['category', 'subcategory']).mean()
+    df_category_accuracies = df_subcategory_accuracies.groupby(['category']).mean()
+    df_global_accuracies = df_category_accuracies.mean().to_frame().T
+    df_global_accuracies.index = ['Accuracy']
+
+    # Round at the end
+    precision = 1
+    return (
+        (df_type_accuracies * 100).round(precision).T,
+        (df_subcategory_accuracies * 100).round(precision).T,
+        (df_category_accuracies * 100).round(precision).T,
+        (df_global_accuracies * 100).round(precision).T
+    )
