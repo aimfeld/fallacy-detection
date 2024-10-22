@@ -4,6 +4,7 @@ This module contains functions for analyzing the fallacy experiments.
 import pandas as pd
 import re
 from .llms import LLM
+from .experiment import RESPONSE_ERROR
 
 
 def score_fallacy_identification(df_fallacies: pd.DataFrame):
@@ -32,6 +33,27 @@ def _get_fallacy_identification_score(label: int, response: str):
         return pd.NA  # Response does not contain a valid answer
 
     return 1 if response_label == label else 0
+
+
+def score_fallacy_classification(df_fallacies: pd.DataFrame):
+    for llm_label in LLM:
+        response_column = f"{llm_label.value}_response"
+        if response_column not in df_fallacies.columns:
+            continue
+
+        score_column = f"{llm_label.value}_score"
+        df_fallacies[score_column] = df_fallacies.apply(
+            lambda row: _get_fallacy_classification_score(row["fallacy"], row[response_column]), axis=1
+        ).astype('Int64')
+
+
+def _get_fallacy_classification_score(fallacy: str, response: str):
+    if response == '' or response == RESPONSE_ERROR:
+        return pd.NA
+
+    contains_fallacy = bool(re.search(fallacy, response, re.IGNORECASE))
+
+    return 1 if contains_fallacy else 0
 
 
 def get_accuracies(df_fallacies: pd.DataFrame):

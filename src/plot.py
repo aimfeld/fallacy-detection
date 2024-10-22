@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
                     y='llm_label', y_label= '',
                     hue: str = None, legend_title: str = None, legend_anchor: tuple = None,
-                    annotate: bool = False):
+                    annotate: bool = False, xlim: tuple = (0, 100)):
     _, ax = plt.subplots(figsize=figsize)
     sns.barplot(x='accuracy', y=y, data=data, hue=hue, ax=ax)
     plt.title(title)
@@ -17,7 +17,7 @@ def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
     plt.ylabel(y_label)
 
     # Set x-axis limits, start from 50% (random guessing)
-    ax.set_xlim(50, 100)
+    ax.set_xlim(xlim)
 
     if annotate:
         for i in ax.containers:
