@@ -102,8 +102,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-4-0613",
             temperature=0,
-            timeout=3000,
-            max_retries=3,
+            timeout=3.0,
+            max_retries=2,
         )
 
     if LLM.GPT_4O in llm_names:
@@ -111,8 +111,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-4o-2024-08-06",
             temperature=0,
-            timeout=3000,
-            max_retries=3,
+            timeout=3.0,
+            max_retries=2,
         )
 
     if LLM.GPT_4O_MINI in llm_names:
@@ -120,8 +120,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-4o-mini-2024-07-18",
             temperature=0,
-            timeout=3000,
-            max_retries=3,
+            timeout=3.0,
+            max_retries=2,
         )
 
     if LLM.GPT_O1_MINI in llm_names:
@@ -129,8 +129,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-o1-mini-2024-09-12",
             temperature=0,
-            timeout=3000,
-            max_retries=3,
+            timeout=3.0,
+            max_retries=2,
         )
 
     if LLM.CLAUDE_3_5_SONNET in llm_names:
@@ -139,8 +139,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             api_key=os.getenv("ANTHROPIC_API_KEY"),
             model="claude-3-5-sonnet-20240620",
             temperature=0,
-            timeout=3000,
-            max_retries=3,
+            timeout=3.0,
+            max_retries=2,
         )
 
     if LLM.CLAUDE_3_OPUS in llm_names:
@@ -149,8 +149,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             api_key=os.getenv("ANTHROPIC_API_KEY"),
             model="claude-3-opus-20240229",
             temperature=0,
-            timeout=3000,
-            max_retries=3,
+            timeout=3.0,
+            max_retries=2,
         )
 
     if LLM.CLAUDE_3_HAIKU in llm_names:
@@ -159,8 +159,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             api_key=os.getenv("ANTHROPIC_API_KEY"),
             model="claude-3-haiku-20240307",
             temperature=0,
-            timeout=3000,
-            max_retries=3,
+            timeout=3.0,
+            max_retries=2,
         )
 
     if LLM.GEMINI_1_5_PRO in llm_names:
@@ -168,8 +168,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             api_key=os.getenv("GOOGLE_API_KEY"),
             model="gemini-1.5-pro-002",
             temperature=0,
-            timeout=3000,
-            max_retries=3,
+            timeout=3.0,
+            max_retries=2,
         )
 
     if LLM.GEMINI_1_5_FLASH in llm_names:
@@ -177,8 +177,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             api_key=os.getenv("GOOGLE_API_KEY"),
             model="gemini-1.5-flash-002",
             temperature=0,
-            timeout=3000,
-            max_retries=3,
+            timeout=3.0,
+            max_retries=2,
         )
 
     if LLM.GEMINI_1_5_FLASH_8B in llm_names:
@@ -186,8 +186,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             api_key=os.getenv("GOOGLE_API_KEY"),
             model="gemini-1.5-flash-8b-001",
             temperature=0,
-            timeout=3000,
-            max_retries=3,
+            timeout=3.0,
+            max_retries=2,
         )
 
     if LLM.LLAMA_3_1_70B in llm_names:
