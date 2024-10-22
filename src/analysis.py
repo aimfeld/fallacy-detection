@@ -1,7 +1,6 @@
 """
 This module contains functions for analyzing the fallacy experiments.
 """
-import numpy as np
 import pandas as pd
 import re
 from .llms import LLM
@@ -20,9 +19,10 @@ def score_fallacy_identification(df_fallacies: pd.DataFrame):
 
 
 def _get_fallacy_identification_score(label: int, response: str):
-    filtered_response = response.lower()
-    contains_yes = bool(re.search(r'\byes\b', filtered_response))
-    contains_no = bool(re.search(r'\bno\b', filtered_response))
+    # The model don't seem to respond in lowercase yes or no. But in chain-of-thought prompt
+    # responses, the reasoning sometimes contains the word "no", when the final answer is "Yes".
+    contains_yes = bool(re.search(r'\bYes\b', response))
+    contains_no = bool(re.search(r'\bNo\b', response))
 
     if contains_yes and not contains_no:
         response_label = 0  # Reasoning step is evaluated as valid
@@ -41,20 +41,33 @@ def get_accuracies(df_fallacies: pd.DataFrame):
 
     # Rename LLM columns
     df_scores = df_fallacies[score_columns]
-    df_scores.columns = group_columns + [llm.label for llm in LLM if llm.value + '_score' in df_scores.columns]
+    df_scores.columns = group_columns + [llm.value for llm in LLM if llm.value + '_score' in df_scores.columns]
 
     # Calculate macro-averages, giving equal weight to each category, subcategory, and fallacy
-    df_type_accuracies = df_scores.groupby(['category', 'subcategory', 'fallacy']).mean()
+    df_type_accuracies = df_scores.groupby(['category', 'subcategory', 'fallacy']).mean() * 100
     df_subcategory_accuracies = df_type_accuracies.groupby(['category', 'subcategory']).mean()
     df_category_accuracies = df_subcategory_accuracies.groupby(['category']).mean()
     df_global_accuracies = df_category_accuracies.mean().to_frame().T
-    df_global_accuracies.index = ['Accuracy']
+    df_global_accuracies.index = ['accuracy']
 
-    # Round at the end
-    precision = 1
     return (
-        (df_type_accuracies * 100).round(precision).T,
-        (df_subcategory_accuracies * 100).round(precision).T,
-        (df_category_accuracies * 100).round(precision).T,
-        (df_global_accuracies * 100).round(precision).T
+        df_type_accuracies.T,
+        df_subcategory_accuracies.T,
+        df_category_accuracies.T,
+        df_global_accuracies.T
     )
+
+# Add LLM info based on the dataframe index which contains LLM keys
+def add_llm_info(df: pd.DataFrame, label = False, group = False, provider = False):
+    df_info = df.copy()
+    add_all = not label and not provider and not group
+
+    if label or add_all:
+        df_info['llm_label'] = df_info.apply(lambda row: LLM(row.name).label, axis=1)
+    if group or add_all:
+        df_info['llm_group'] = df_info.apply(lambda row: LLM(row.name).group, axis=1)
+    if provider or add_all:
+        df_info['llm_provider'] = df_info.apply(lambda row: LLM(row.name).provider, axis=1)
+
+
+    return df_info

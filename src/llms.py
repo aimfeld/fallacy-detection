@@ -28,6 +28,15 @@ class LLM(Enum):
     def label(self):
         return LLMLabel[self.name].value
 
+    @property
+    def group(self):
+        return LLMGroup[self.name].value
+
+    @property
+    def provider(self):
+        return LLMProvider[self.name].value
+
+
 # LLM labels for display
 class LLMLabel(Enum):
     GPT_4 = "GPT-4"
@@ -41,6 +50,34 @@ class LLMLabel(Enum):
     GEMINI_1_5_FLASH = "Gemini 1.5 Flash"
     GEMINI_1_5_FLASH_8B = "Gemini 1.5 Flash 8B"
     LLAMA_3_1_70B = "Llama 3.1 70B"
+
+
+class LLMGroup(Enum):
+    GPT_4 = "flagship"
+    GPT_4O = "flagship"
+    GPT_4O_MINI = "efficient"
+    GPT_O1_MINI = "efficient"
+    CLAUDE_3_5_SONNET = "flagship"
+    CLAUDE_3_OPUS = "flagship"
+    CLAUDE_3_HAIKU = "efficient"
+    GEMINI_1_5_PRO = "flagship"
+    GEMINI_1_5_FLASH = "efficient"
+    GEMINI_1_5_FLASH_8B = "efficient"
+    LLAMA_3_1_70B = "alternative"
+
+
+class LLMProvider(Enum):
+    GPT_4 = "OpenAI"
+    GPT_4O = "OpenAI"
+    GPT_4O_MINI = "OpenAI"
+    GPT_O1_MINI = "OpenAI"
+    CLAUDE_3_5_SONNET = "Anthropic"
+    CLAUDE_3_OPUS = "Anthropic"
+    CLAUDE_3_HAIKU = "Anthropic"
+    GEMINI_1_5_PRO = "Google"
+    GEMINI_1_5_FLASH = "Google"
+    GEMINI_1_5_FLASH_8B = "Google"
+    LLAMA_3_1_70B = "Meta"
 
 
 # Type definitions
