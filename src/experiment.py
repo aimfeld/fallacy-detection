@@ -29,7 +29,7 @@ def save_fallacy_df(df_fallacies: pd.DataFrame, filename: str):
 
 # Run experiment 1: fallacy identification with zero-shot prompt
 def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: str, llms: LLMs,
-                   keep_existing_responses: bool = True, sleep_seconds: float = 0):
+                   keep_existing_responses: bool = True, sleep_seconds: float = 0, log_responses: bool = False):
     for llm_name, llm in llms.items():
         response_column = f"{llm_name.value}_response"
         # Add a column to the dataframe for each LLM if it doesn't exist
@@ -50,7 +50,8 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
 
             try:
                 response = llm.invoke(prompt)
-                # log(f"Response from LLM {llm_name.value}: {response}")
+                if log_responses:
+                    log(f"Response from LLM {llm_name.value} (index={index}): {response}")
 
                 # Huggingface endpoint returns a string, the other LLMs return a response object
                 response_text = response if isinstance(response, str) else response.content
