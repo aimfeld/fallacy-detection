@@ -133,7 +133,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="o1-mini-2024-09-12",
             temperature=1, # Only temperature=1 is allowed
-            timeout=20.0, # Needs longer to respond
+            timeout=10.0, # Needs longer to respond
             max_retries=2,
         )
 
@@ -142,7 +142,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="o1-preview-2024-09-12",
             temperature=1, # Only temperature=1 is allowed
-            timeout=60.0, # Needs longer to respond
+            timeout=30.0, # Needs longer to respond
             max_retries=2,
         )
 
