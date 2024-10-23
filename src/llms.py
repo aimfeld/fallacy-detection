@@ -55,15 +55,15 @@ class LLMLabel(Enum):
 class LLMGroup(Enum):
     GPT_4 = "flagship"
     GPT_4O = "flagship"
-    GPT_4O_MINI = "efficient"
-    GPT_O1_MINI = "efficient"
+    GPT_4O_MINI = "lightweight"
+    GPT_O1_MINI = "lightweight"
     CLAUDE_3_5_SONNET = "flagship"
     CLAUDE_3_OPUS = "flagship"
-    CLAUDE_3_HAIKU = "efficient"
+    CLAUDE_3_HAIKU = "lightweight"
     GEMINI_1_5_PRO = "flagship"
-    GEMINI_1_5_FLASH = "efficient"
-    GEMINI_1_5_FLASH_8B = "efficient"
-    LLAMA_3_1_70B = "alternative"
+    GEMINI_1_5_FLASH = "lightweight"
+    GEMINI_1_5_FLASH_8B = "lightweight"
+    LLAMA_3_1_70B = "open-source"
 
 
 class LLMProvider(Enum):
