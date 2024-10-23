@@ -15,7 +15,8 @@ class LLM(Enum):
     GPT_4 = "gpt_4"
     GPT_4O = "gpt_4o"
     GPT_4O_MINI = "gpt_4o_mini"
-    GPT_O1_MINI = "gpt_o1_mini" # Not working yet
+    O1_MINI = "o1_mini" # Not working yet
+    O1_PREVIEW = "o1_preview"
     CLAUDE_3_5_SONNET = "claude_3_5_sonnet"
     CLAUDE_3_OPUS = "claude_3_opus"
     CLAUDE_3_HAIKU = "claude_3_haiku"
@@ -42,7 +43,8 @@ class LLMLabel(Enum):
     GPT_4 = "GPT-4"
     GPT_4O = "GPT-4o"
     GPT_4O_MINI = "GPT-4o Mini"
-    GPT_O1_MINI = "GPT-o1 Mini"
+    O1_MINI = "o1-mini"
+    O1_PREVIEW = "o1-preview" # Lowercase is intential, see https://platform.openai.com/docs/models/o1
     CLAUDE_3_5_SONNET = "Claude 3.5 Sonnet"
     CLAUDE_3_OPUS = "Claude 3 Opus"
     CLAUDE_3_HAIKU = "Claude 3 Haiku"
@@ -56,7 +58,8 @@ class LLMGroup(Enum):
     GPT_4 = "flagship"
     GPT_4O = "flagship"
     GPT_4O_MINI = "lightweight"
-    GPT_O1_MINI = "lightweight"
+    O1_MINI = "lightweight"
+    O1_PREVIEW = "flagship"
     CLAUDE_3_5_SONNET = "flagship"
     CLAUDE_3_OPUS = "flagship"
     CLAUDE_3_HAIKU = "lightweight"
@@ -70,7 +73,8 @@ class LLMProvider(Enum):
     GPT_4 = "OpenAI"
     GPT_4O = "OpenAI"
     GPT_4O_MINI = "OpenAI"
-    GPT_O1_MINI = "OpenAI"
+    O1_MINI = "OpenAI"
+    O1_PREVIEW = "OpenAI"
     CLAUDE_3_5_SONNET = "Anthropic"
     CLAUDE_3_OPUS = "Anthropic"
     CLAUDE_3_HAIKU = "Anthropic"
@@ -124,12 +128,21 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             max_retries=2,
         )
 
-    if LLM.GPT_O1_MINI in llm_names:
-        llms[LLM.GPT_O1_MINI] = ChatOpenAI(
+    if LLM.O1_MINI in llm_names:
+        llms[LLM.O1_MINI] = ChatOpenAI(
             openai_api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-o1-mini-2024-09-12",
-            temperature=0,
-            timeout=3.0,
+            model="o1-mini-2024-09-12",
+            temperature=1, # Only temperature=1 is allowed
+            timeout=20.0, # Needs longer to respond
+            max_retries=2,
+        )
+
+    if LLM.O1_PREVIEW in llm_names:
+        llms[LLM.O1_PREVIEW] = ChatOpenAI(
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            model="o1-preview-2024-09-12",
+            temperature=1, # Only temperature=1 is allowed
+            timeout=60.0, # Needs longer to respond
             max_retries=2,
         )
 
