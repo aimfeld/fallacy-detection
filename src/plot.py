@@ -5,11 +5,14 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Horizontal accuracy bar plot
+
 def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
                     y='llm_label', y_label= '',
                     hue: str = None, legend_title: str = None, legend_anchor: tuple = None,
                     annotate: bool = False, xlim: tuple = (0, 100)):
+    """
+    Plot horizontal bar plot of accuracies
+    """
     _, ax = plt.subplots(figsize=figsize)
     sns.barplot(x='accuracy', y=y, data=data, hue=hue, ax=ax)
     plt.title(title)

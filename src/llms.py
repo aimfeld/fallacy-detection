@@ -88,14 +88,15 @@ class LLMProvider(Enum):
 LLMs = dict[LLM, Runnable]
 
 
-# Initialize LangChain
 def init_langchain():
+    """
+    Initialize LangChain
+    """
     # Use the LangChain API key as needed (e.g., for tracing)
     os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
     os.environ["LANGCHAIN_TRACING_V2"] = os.getenv("LANGCHAIN_TRACING_V2")
 
 
-# Get the LLMs
 def get_llms(llm_names: list[LLM]) -> LLMs:
     llms: LLMs = {}
 

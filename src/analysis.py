@@ -16,7 +16,7 @@ def score_fallacy_identification(df_fallacies: pd.DataFrame):
         score_column = f"{llm_label.value}_score"
         df_fallacies[score_column] = df_fallacies.apply(
             lambda row: _get_fallacy_identification_score(row["label"], row[response_column]), axis=1
-        ).astype('Int64')
+        ).astype('UInt8')
 
 
 def _get_fallacy_identification_score(label: int, response: str):
@@ -79,8 +79,11 @@ def get_accuracies(df_fallacies: pd.DataFrame):
         df_global_accuracies.T
     )
 
-# Add LLM info based on the dataframe index which contains LLM keys
+
 def add_llm_info(df: pd.DataFrame, label = False, group = False, provider = False):
+    """
+    Add LLM info based on the dataframe index which contains LLM keys.
+    """
     df_info = df.copy()
     add_all = not label and not provider and not group
 
