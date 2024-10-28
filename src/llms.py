@@ -15,6 +15,7 @@ class LLM(Enum):
     GPT_4 = "gpt_4"
     GPT_4O = "gpt_4o"
     GPT_4O_MINI = "gpt_4o_mini"
+    GPT_4O_MINI_TUNED = "gpt_4o_mini_tuned_v1"
     O1_MINI = "o1_mini" # Not working yet
     O1_PREVIEW = "o1_preview"
     CLAUDE_3_5_SONNET = "claude_3_5_sonnet"
@@ -43,6 +44,7 @@ class LLMLabel(Enum):
     GPT_4 = "GPT-4"
     GPT_4O = "GPT-4o"
     GPT_4O_MINI = "GPT-4o Mini"
+    GPT_4O_MINI_TUNED = "GPT-4o Mini Tuned"
     O1_MINI = "o1-mini"
     O1_PREVIEW = "o1-preview" # Lowercase is intential, see https://platform.openai.com/docs/models/o1
     CLAUDE_3_5_SONNET = "Claude 3.5 Sonnet"
@@ -58,6 +60,7 @@ class LLMGroup(Enum):
     GPT_4 = "flagship"
     GPT_4O = "flagship"
     GPT_4O_MINI = "lightweight"
+    GPT_4O_MINI_TUNED = "lightweight"
     O1_MINI = "lightweight"
     O1_PREVIEW = "flagship"
     CLAUDE_3_5_SONNET = "flagship"
@@ -73,6 +76,7 @@ class LLMProvider(Enum):
     GPT_4 = "OpenAI"
     GPT_4O = "OpenAI"
     GPT_4O_MINI = "OpenAI"
+    GPT_4O_MINI_TUNED = "OpenAI"
     O1_MINI = "OpenAI"
     O1_PREVIEW = "OpenAI"
     CLAUDE_3_5_SONNET = "Anthropic"
@@ -124,6 +128,15 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
         llms[LLM.GPT_4O_MINI] = ChatOpenAI(
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-4o-mini-2024-07-18",
+            temperature=0,
+            timeout=3.0,
+            max_retries=2,
+        )
+
+    if LLM.GPT_4O_MINI_TUNED in llm_names:
+        llms[LLM.GPT_4O_MINI_TUNED] = ChatOpenAI(
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            model="ft:gpt-4o-mini-2024-07-18:personal:fallacy-detection-v1:ANJNVY26",
             temperature=0,
             timeout=3.0,
             max_retries=2,
