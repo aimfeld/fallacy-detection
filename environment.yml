@@ -17,4 +17,5 @@ dependencies:
   - langchain-google-genai
   - langchain-huggingface
   - huggingface_hub
+  - openai  # OpenAI API, used for fine-tuning
   - pip

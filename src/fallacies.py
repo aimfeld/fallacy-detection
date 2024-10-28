@@ -13,11 +13,13 @@ def create_fallacy_df() -> pd.DataFrame:
 
     return df
 
+
 def get_fallacy_list() -> list[str]:
     with open('fallacies/fallacy_taxonomy.json') as f:
         taxonomy = json.load(f)
 
     return taxonomy['all']
+
 
 def _remove_square_brackets(string):
     return string.replace("[", "").replace("]", "")
