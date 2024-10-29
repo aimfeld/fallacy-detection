@@ -26,7 +26,6 @@ class LLMGroup(Enum):
 
 
 class LLM(Enum):
-
     GPT_4 = ("gpt_4", "GPT-4", LLMGroup.FLAGSHIP, LLMProvider.OPENAI)
     GPT_4O = ("gpt_4o", "GPT-4o", LLMGroup.FLAGSHIP, LLMProvider.OPENAI)
     GPT_4O_MINI = ("gpt_4o_mini", "GPT-4o Mini", LLMGroup.LIGHTWEIGHT, LLMProvider.OPENAI)
@@ -196,6 +195,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             max_retries=2,
         )
 
+    # Meta models: https://huggingface.co/meta-llama
     if LLM.LLAMA_3_1_405B in llm_names:
         llm = HuggingFaceEndpoint(
             huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
@@ -203,12 +203,11 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             task="text-generation",
             temperature=0,
             timeout=30.0,
+            max_new_tokens=4096, # Prevent cutoff for CoT prompt answers
         )
         # The ChatHuggingFace wrapper adds model specific special tokens, see https://huggingface.co/blog/langchain
         llms[LLM.LLAMA_3_1_405B] = ChatHuggingFace(llm=llm)
 
-
-    # Meta models: https://huggingface.co/meta-llama
     if LLM.LLAMA_3_1_70B in llm_names:
         llm = HuggingFaceEndpoint(
             huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
@@ -216,6 +215,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             task="text-generation",
             temperature=0,
             timeout=20.0,
+            max_new_tokens=4096,  # Prevent cutoff for CoT prompt answers
         )
         llms[LLM.LLAMA_3_1_70B] = ChatHuggingFace(llm=llm)
 
@@ -226,6 +226,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             task="text-generation",
             temperature=0,
             timeout=10.0,
+            max_new_tokens=4096,  # Prevent cutoff for CoT prompt answers
         )
         llms[LLM.LLAMA_3_1_8B] = ChatHuggingFace(llm=llm)
 
