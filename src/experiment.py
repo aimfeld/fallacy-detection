@@ -42,8 +42,8 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
     """
     Run the experiment to get responses from the LLMs for each reasoning step.
     """
-    for llm_name, llm in llms.items():
-        response_column = f"{llm_name.value}_response"
+    for llm, llm_chat in llms.items():
+        response_column = f"{llm.key}_response"
         # Add a column to the dataframe for each LLM if it doesn't exist
         if response_column not in df_fallacies.columns:
             df_fallacies[response_column] = ''
@@ -58,18 +58,18 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
 
             # Get the response from the LLM
             prompt = prompt_template.replace('[step]', row['step'])
-            # log(f"Prompting LLM {llm_name.value}: {prompt}")
+            # log(f"Prompting LLM {llm.key}: {prompt}")
 
             try:
-                response: AIMessage = llm.invoke(prompt)
+                response: AIMessage = llm_chat.invoke(prompt)
                 if log_responses:
-                    log(f"Response from LLM {llm_name.value} (index={index}): {response}")
+                    log(f"Response from LLM {llm.key} (index={index}): {response}")
 
                 response_text = _filter_response_text(response.content)
                 df_fallacies.at[index, response_column] = response_text
 
             except Exception as e:
-                log(f"Error invoking LLM {llm_name.value}: {e}")
+                log(f"Error invoking LLM {llm.key}: {e}")
 
                 df_fallacies.at[index, response_column] = RESPONSE_ERROR
                 error_count += 1
@@ -80,10 +80,10 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
                 save_fallacy_df(df_fallacies, filename)
 
             if response_count % 100 == 0:
-                log(f"Processed {response_count} responses for LLM {llm_name.value} (index={index}).")
+                log(f"Processed {response_count} responses for LLM {llm.key} (index={index}).")
 
             if error_count > 10:
-                log(f"Error count too high for LLM {llm_name.value}, skipping model.")
+                log(f"Error count too high for LLM {llm.key}, skipping model.")
                 break
 
             # Sleep between requests if specified

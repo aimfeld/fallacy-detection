@@ -10,90 +10,61 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 from enum import Enum
 
-# LLM keys
-class LLM(Enum):
-    GPT_4 = "gpt_4"
-    GPT_4O = "gpt_4o"
-    GPT_4O_MINI = "gpt_4o_mini"
-    GPT_4O_MINI_TUNED = "gpt_4o_mini_tuned_v1"
-    O1_MINI = "o1_mini" # Not working yet
-    O1_PREVIEW = "o1_preview"
-    CLAUDE_3_5_SONNET = "claude_3_5_sonnet"
-    CLAUDE_3_OPUS = "claude_3_opus"
-    CLAUDE_3_HAIKU = "claude_3_haiku"
-    GEMINI_1_5_PRO = "gemini_1_5_pro"
-    GEMINI_1_5_FLASH = "gemini_1_5_flash"
-    GEMINI_1_5_FLASH_8B = "gemini_1_5_flash_8b"
-    LLAMA_3_1_405B = "llama_3_1_405b"
-    LLAMA_3_1_70B = "llama_3_1_70b"
-    LLAMA_3_1_8B = "llama_3_1_8b"
 
-    @property
-    def label(self) -> str:
-        return LLMLabel[self.name].value
-
-    @property
-    def group(self) -> str:
-        return LLMGroup[self.name].value
-
-    @property
-    def provider(self) -> str:
-        return LLMProvider[self.name].value
-
-
-# LLM labels for display
-class LLMLabel(Enum):
-    GPT_4 = "GPT-4"
-    GPT_4O = "GPT-4o"
-    GPT_4O_MINI = "GPT-4o Mini"
-    GPT_4O_MINI_TUNED = "GPT-4o Mini Tuned"
-    O1_MINI = "o1-mini"
-    O1_PREVIEW = "o1-preview" # Lowercase is intential, see https://platform.openai.com/docs/models/o1
-    CLAUDE_3_5_SONNET = "Claude 3.5 Sonnet"
-    CLAUDE_3_OPUS = "Claude 3 Opus"
-    CLAUDE_3_HAIKU = "Claude 3 Haiku"
-    GEMINI_1_5_PRO = "Gemini 1.5 Pro"
-    GEMINI_1_5_FLASH = "Gemini 1.5 Flash"
-    GEMINI_1_5_FLASH_8B = "Gemini 1.5 Flash 8B"
-    LLAMA_3_1_405B = "Llama 3.1 405B"
-    LLAMA_3_1_70B = "Llama 3.1 70B"
-    LLAMA_3_1_8B = "Llama 3.1 8B"
+class LLMProvider(Enum):
+    OPENAI = "OpenAI"
+    ANTHROPIC = "Anthropic"
+    GOOGLE = "Google"
+    META = "Meta"
 
 
 class LLMGroup(Enum):
-    GPT_4 = "flagship"
-    GPT_4O = "flagship"
-    GPT_4O_MINI = "lightweight"
-    GPT_4O_MINI_TUNED = "fine-tuned"
-    O1_MINI = "lightweight"
-    O1_PREVIEW = "flagship"
-    CLAUDE_3_5_SONNET = "flagship"
-    CLAUDE_3_OPUS = "flagship"
-    CLAUDE_3_HAIKU = "lightweight"
-    GEMINI_1_5_PRO = "flagship"
-    GEMINI_1_5_FLASH = "lightweight"
-    GEMINI_1_5_FLASH_8B = "lightweight"
-    LLAMA_3_1_405B = "flagship"
-    LLAMA_3_1_70B = "intermediate"
-    LLAMA_3_1_8B = "lightweight"
+    FLAGSHIP = "flagship"
+    MEDIUM = "medium"
+    LIGHTWEIGHT = "lightweight"
+    FINE_TUNED = "fine-tuned"
 
 
-class LLMProvider(Enum):
-    GPT_4 = "OpenAI"
-    GPT_4O = "OpenAI"
-    GPT_4O_MINI = "OpenAI"
-    GPT_4O_MINI_TUNED = "OpenAI"
-    O1_MINI = "OpenAI"
-    O1_PREVIEW = "OpenAI"
-    CLAUDE_3_5_SONNET = "Anthropic"
-    CLAUDE_3_OPUS = "Anthropic"
-    CLAUDE_3_HAIKU = "Anthropic"
-    GEMINI_1_5_PRO = "Google"
-    GEMINI_1_5_FLASH = "Google"
-    GEMINI_1_5_FLASH_8B = "Google"
-    LLAMA_3_1_405B = "Meta"
-    LLAMA_3_1_70B = "Meta"
-    LLAMA_3_1_8B = "Meta"
+class LLM(Enum):
+
+    GPT_4 = ("gpt_4", "GPT-4", LLMGroup.FLAGSHIP, LLMProvider.OPENAI)
+    GPT_4O = ("gpt_4o", "GPT-4o", LLMGroup.FLAGSHIP, LLMProvider.OPENAI)
+    GPT_4O_MINI = ("gpt_4o_mini", "GPT-4o Mini", LLMGroup.LIGHTWEIGHT, LLMProvider.OPENAI)
+    GPT_4O_MINI_TUNED = ("gpt_4o_mini_tuned_v1", "GPT-4o Mini Tuned", LLMGroup.FINE_TUNED, LLMProvider.OPENAI)
+    O1_MINI = ("o1_mini", "o1-mini", LLMGroup.LIGHTWEIGHT, LLMProvider.OPENAI)
+    O1_PREVIEW = ("o1_preview", "o1-preview", LLMGroup.FLAGSHIP, LLMProvider.OPENAI)
+    CLAUDE_3_5_SONNET = ("claude_3_5_sonnet", "Claude 3.5 Sonnet", LLMGroup.FLAGSHIP, LLMProvider.ANTHROPIC)
+    CLAUDE_3_OPUS = ("claude_3_opus", "Claude 3 Opus", LLMGroup.FLAGSHIP, LLMProvider.ANTHROPIC)
+    CLAUDE_3_HAIKU = ("claude_3_haiku", "Claude 3 Haiku", LLMGroup.LIGHTWEIGHT, LLMProvider.ANTHROPIC)
+    GEMINI_1_5_PRO = ("gemini_1_5_pro", "Gemini 1.5 Pro", LLMGroup.FLAGSHIP, LLMProvider.GOOGLE)
+    GEMINI_1_5_FLASH = ("gemini_1_5_flash", "Gemini 1.5 Flash", LLMGroup.LIGHTWEIGHT, LLMProvider.GOOGLE)
+    GEMINI_1_5_FLASH_8B = ("gemini_1_5_flash_8b", "Gemini 1.5 Flash 8B", LLMGroup.LIGHTWEIGHT, LLMProvider.GOOGLE)
+    LLAMA_3_1_405B = ("llama_3_1_405b", "Llama 3.1 405B", LLMGroup.FLAGSHIP, LLMProvider.META)
+    LLAMA_3_1_70B = ("llama_3_1_70b", "Llama 3.1 70B", LLMGroup.MEDIUM, LLMProvider.META)
+    LLAMA_3_1_8B = ("llama_3_1_8b", "Llama 3.1 8B", LLMGroup.LIGHTWEIGHT, LLMProvider.META)
+
+
+    def __init__(self, key: str, label: str, group: LLMGroup, provider: LLMProvider):
+        self._key = key
+        self._label = label
+        self._group = group
+        self._provider = provider
+
+    @property
+    def key(self) -> str:
+        return self._key
+
+    @property
+    def label(self) -> str:
+        return self._label
+
+    @property
+    def group(self) -> LLMGroup:
+        return self._group
+
+    @property
+    def provider(self) -> LLMProvider:
+        return self._provider
 
 
 # Type definitions
@@ -231,7 +202,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             repo_id="meta-llama/Meta-Llama-3.1-405B-Instruct",
             task="text-generation",
             temperature=0,
-            timeout=3.0,
+            timeout=30.0,
         )
         # The ChatHuggingFace wrapper adds model specific special tokens, see https://huggingface.co/blog/langchain
         llms[LLM.LLAMA_3_1_405B] = ChatHuggingFace(llm=llm)
@@ -244,7 +215,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             repo_id="meta-llama/Meta-Llama-3.1-70B-Instruct",
             task="text-generation",
             temperature=0,
-            timeout=3.0,
+            timeout=20.0,
         )
         llms[LLM.LLAMA_3_1_70B] = ChatHuggingFace(llm=llm)
 
@@ -254,7 +225,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             repo_id="meta-llama/Meta-Llama-3.1-8B-Instruct",
             task="text-generation",
             temperature=0,
-            timeout=3.0,
+            timeout=10.0,
         )
         llms[LLM.LLAMA_3_1_8B] = ChatHuggingFace(llm=llm)
 

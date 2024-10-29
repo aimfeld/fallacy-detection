@@ -8,12 +8,12 @@ from .experiment import RESPONSE_ERROR
 
 
 def score_fallacy_identification(df_fallacies: pd.DataFrame):
-    for llm_label in LLM:
-        response_column = f"{llm_label.value}_response"
+    for llm in LLM:
+        response_column = f"{llm.key}_response"
         if response_column not in df_fallacies.columns:
             continue
 
-        score_column = f"{llm_label.value}_score"
+        score_column = f"{llm.key}_score"
         df_fallacies[score_column] = df_fallacies.apply(
             lambda row: _get_fallacy_identification_score(row["label"], row[response_column]), axis=1
         ).astype('UInt8')
@@ -36,12 +36,12 @@ def _get_fallacy_identification_score(label: int, response: str):
 
 
 def score_fallacy_classification(df_fallacies: pd.DataFrame):
-    for llm_label in LLM:
-        response_column = f"{llm_label.value}_response"
+    for llm in LLM:
+        response_column = f"{llm.key}_response"
         if response_column not in df_fallacies.columns:
             continue
 
-        score_column = f"{llm_label.value}_score"
+        score_column = f"{llm.key}_score"
         df_fallacies[score_column] = df_fallacies.apply(
             lambda row: _get_fallacy_classification_score(row["fallacy"], row[response_column]), axis=1
         ).astype('Int64')
@@ -58,12 +58,12 @@ def _get_fallacy_classification_score(fallacy: str, response: str):
 
 def get_accuracies(df_fallacies: pd.DataFrame):
     group_columns = ['category', 'subcategory', 'fallacy']
-    score_columns = group_columns + [llm.value + '_score' for llm in LLM if
-                                     llm.value + '_score' in df_fallacies.columns]
+    score_columns = group_columns + [llm.key + '_score' for llm in LLM if
+                                     llm.key + '_score' in df_fallacies.columns]
 
     # Rename LLM columns
     df_scores = df_fallacies[score_columns]
-    df_scores.columns = group_columns + [llm.value for llm in LLM if llm.value + '_score' in df_scores.columns]
+    df_scores.columns = group_columns + [llm.key for llm in LLM if llm.key + '_score' in df_scores.columns]
 
     # Calculate macro-averages, giving equal weight to each category, subcategory, and fallacy
     df_type_accuracies = df_scores.groupby(['category', 'subcategory', 'fallacy']).mean() * 100
@@ -86,13 +86,14 @@ def add_llm_info(df: pd.DataFrame, label = False, group = False, provider = Fals
     """
     df_info = df.copy()
     add_all = not label and not provider and not group
+    llms = {llm.key: llm for llm in LLM}
 
     if label or add_all:
-        df_info['llm_label'] = df_info.apply(lambda row: LLM(row.name).label, axis=1)
+        df_info['llm_label'] = df_info.apply(lambda row: llms[row.name].label, axis=1)
     if group or add_all:
-        df_info['llm_group'] = df_info.apply(lambda row: LLM(row.name).group, axis=1)
+        df_info['llm_group'] = df_info.apply(lambda row: llms[row.name].group.value, axis=1)
     if provider or add_all:
-        df_info['llm_provider'] = df_info.apply(lambda row: LLM(row.name).provider, axis=1)
+        df_info['llm_provider'] = df_info.apply(lambda row: llms[row.name].provider.value, axis=1)
 
 
     return df_info
