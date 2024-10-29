@@ -7,7 +7,7 @@ from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_huggingface import HuggingFaceEndpoint
+from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 from enum import Enum
 
 # LLM keys
@@ -24,7 +24,9 @@ class LLM(Enum):
     GEMINI_1_5_PRO = "gemini_1_5_pro"
     GEMINI_1_5_FLASH = "gemini_1_5_flash"
     GEMINI_1_5_FLASH_8B = "gemini_1_5_flash_8b"
+    LLAMA_3_1_405B = "llama_3_1_405b"
     LLAMA_3_1_70B = "llama_3_1_70b"
+    LLAMA_3_1_8B = "llama_3_1_8b"
 
     @property
     def label(self) -> str:
@@ -53,7 +55,9 @@ class LLMLabel(Enum):
     GEMINI_1_5_PRO = "Gemini 1.5 Pro"
     GEMINI_1_5_FLASH = "Gemini 1.5 Flash"
     GEMINI_1_5_FLASH_8B = "Gemini 1.5 Flash 8B"
+    LLAMA_3_1_405B = "Llama 3.1 405B"
     LLAMA_3_1_70B = "Llama 3.1 70B"
+    LLAMA_3_1_8B = "Llama 3.1 8B"
 
 
 class LLMGroup(Enum):
@@ -69,7 +73,9 @@ class LLMGroup(Enum):
     GEMINI_1_5_PRO = "flagship"
     GEMINI_1_5_FLASH = "lightweight"
     GEMINI_1_5_FLASH_8B = "lightweight"
-    LLAMA_3_1_70B = "open-source"
+    LLAMA_3_1_405B = "flagship"
+    LLAMA_3_1_70B = "intermediate"
+    LLAMA_3_1_8B = "lightweight"
 
 
 class LLMProvider(Enum):
@@ -85,7 +91,9 @@ class LLMProvider(Enum):
     GEMINI_1_5_PRO = "Google"
     GEMINI_1_5_FLASH = "Google"
     GEMINI_1_5_FLASH_8B = "Google"
+    LLAMA_3_1_405B = "Meta"
     LLAMA_3_1_70B = "Meta"
+    LLAMA_3_1_8B = "Meta"
 
 
 # Type definitions
@@ -217,14 +225,38 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             max_retries=2,
         )
 
-    if LLM.LLAMA_3_1_70B in llm_names:
-        llms[LLM.LLAMA_3_1_70B] = HuggingFaceEndpoint(
+    if LLM.LLAMA_3_1_405B in llm_names:
+        llm = HuggingFaceEndpoint(
             huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
-            # repo_id="meta-llama/Meta-Llama-3.1-405B-Instruct",
-            repo_id="meta-llama/Meta-Llama-3.1-70B-Instruct",
-            # repo_id="meta-llama/Meta-Llama-3-8B-Instruct",
-            max_new_tokens=3, # Suppress explanation of response.
-            temperature=0.1 # 0 doesn't work
+            repo_id="meta-llama/Meta-Llama-3.1-405B-Instruct",
+            task="text-generation",
+            temperature=0,
+            timeout=3.0,
         )
+        # The ChatHuggingFace wrapper adds model specific special tokens, see https://huggingface.co/blog/langchain
+        llms[LLM.LLAMA_3_1_405B] = ChatHuggingFace(llm=llm)
+
+
+    # Meta models: https://huggingface.co/meta-llama
+    if LLM.LLAMA_3_1_70B in llm_names:
+        llm = HuggingFaceEndpoint(
+            huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+            repo_id="meta-llama/Meta-Llama-3.1-70B-Instruct",
+            task="text-generation",
+            temperature=0,
+            timeout=3.0,
+        )
+        llms[LLM.LLAMA_3_1_70B] = ChatHuggingFace(llm=llm)
+
+    if LLM.LLAMA_3_1_8B in llm_names:
+        llm = HuggingFaceEndpoint(
+            huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+            repo_id="meta-llama/Meta-Llama-3.1-8B-Instruct",
+            task="text-generation",
+            temperature=0,
+            timeout=3.0,
+        )
+        llms[LLM.LLAMA_3_1_8B] = ChatHuggingFace(llm=llm)
+
 
     return llms

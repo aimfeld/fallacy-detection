@@ -6,6 +6,7 @@ from .llms import LLMs
 from .utils import log
 from .fallacies import create_fallacy_df, get_fallacy_list
 from time import sleep
+from langchain_core.messages.ai import AIMessage
 
 # Constants
 RESPONSE_ERROR = 'error'
@@ -60,13 +61,12 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
             # log(f"Prompting LLM {llm_name.value}: {prompt}")
 
             try:
-                response = llm.invoke(prompt)
+                response: AIMessage = llm.invoke(prompt)
                 if log_responses:
                     log(f"Response from LLM {llm_name.value} (index={index}): {response}")
 
-                # Huggingface endpoint returns a string, the other LLMs return a response object
-                response_text = response if isinstance(response, str) else response.content
-                df_fallacies.at[index, response_column] = response_text.replace("\n", " ").strip()
+                response_text = _filter_response_text(response.content)
+                df_fallacies.at[index, response_column] = response_text
 
             except Exception as e:
                 log(f"Error invoking LLM {llm_name.value}: {e}")
@@ -110,4 +110,6 @@ What type of fallacy does the following reasoning step belong to?
     return prompt_template
 
 
+def _filter_response_text(response_text: str) -> str:
+    return response_text.replace("\n", " ").strip()
 
