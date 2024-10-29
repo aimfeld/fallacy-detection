@@ -9,12 +9,13 @@ import matplotlib.pyplot as plt
 def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
                     y='llm_label', y_label= '',
                     hue: str = None, legend_title: str = None, legend_anchor: tuple = None,
+                    order: list[str] = None,
                     annotate: bool = False, xlim: tuple = (0, 100)):
     """
     Plot horizontal bar plot of accuracies
     """
     _, ax = plt.subplots(figsize=figsize)
-    sns.barplot(x='accuracy', y=y, data=data, hue=hue, ax=ax)
+    sns.barplot(x='accuracy', y=y, data=data, hue=hue, order=order, ax=ax)
     plt.title(title)
     plt.xlabel('Accuracy (%)')
     plt.ylabel(y_label)

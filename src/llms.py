@@ -27,15 +27,15 @@ class LLM(Enum):
     LLAMA_3_1_70B = "llama_3_1_70b"
 
     @property
-    def label(self):
+    def label(self) -> str:
         return LLMLabel[self.name].value
 
     @property
-    def group(self):
+    def group(self) -> str:
         return LLMGroup[self.name].value
 
     @property
-    def provider(self):
+    def provider(self) -> str:
         return LLMProvider[self.name].value
 
 
@@ -60,7 +60,7 @@ class LLMGroup(Enum):
     GPT_4 = "flagship"
     GPT_4O = "flagship"
     GPT_4O_MINI = "lightweight"
-    GPT_4O_MINI_TUNED = "lightweight"
+    GPT_4O_MINI_TUNED = "fine-tuned"
     O1_MINI = "lightweight"
     O1_PREVIEW = "flagship"
     CLAUDE_3_5_SONNET = "flagship"
