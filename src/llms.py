@@ -206,7 +206,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
         # The ChatHuggingFace wrapper adds model specific special tokens, see https://huggingface.co/blog/langchain
         # Use bind() to work around bug: https://github.com/langchain-ai/langchain/issues/23586
         llms[LLM.LLAMA_3_1_405B] = ChatHuggingFace(llm=llm).bind(
-            max_tokens=8192, # Prevent cutoff for CoT prompt answers
+            max_tokens=4096, # Prevent cutoff for CoT prompt answers
             temperature=0.0
         ).with_retry(stop_after_attempt=3)
 
@@ -218,7 +218,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             timeout=20.0,
         )
         llms[LLM.LLAMA_3_1_70B] = ChatHuggingFace(llm=llm).bind(
-            max_tokens=8192, # Prevent cutoff for CoT prompt answers
+            max_tokens=4096, # Prevent cutoff for CoT prompt answers
             temperature=0.0
         ).with_retry(stop_after_attempt=3)
 
@@ -230,7 +230,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             timeout=10.0,
         )
         llms[LLM.LLAMA_3_1_8B] = ChatHuggingFace(llm=llm).bind(
-            max_tokens=8192, # Prevent cutoff for CoT prompt answers
+            max_tokens=4096, # Prevent cutoff for CoT prompt answers. inputs tokens + max_tokens must be <= 8192
             temperature=0.0
         ).with_retry(stop_after_attempt=3)
 
