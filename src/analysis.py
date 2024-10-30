@@ -44,7 +44,7 @@ def score_fallacy_classification(df_fallacies: pd.DataFrame):
         score_column = f"{llm.key}_score"
         df_fallacies[score_column] = df_fallacies.apply(
             lambda row: _get_fallacy_classification_score(row["fallacy"], row[response_column]), axis=1
-        ).astype('Int64')
+        ).astype('UInt8')
 
 
 def _get_fallacy_classification_score(fallacy: str, response: str):
