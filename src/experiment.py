@@ -11,6 +11,7 @@ from langchain_core.messages.ai import AIMessage
 # Constants
 RESPONSE_ERROR = 'error'
 STEP_PLACEHOLDER = '[step]'
+FALLACIES_PLACEHOLDER = '[fallacies]'
 
 
 def get_fallacy_df(filename: str, only_incorrect: bool = False) -> pd.DataFrame:
@@ -122,14 +123,14 @@ def get_classification_prompt_template() -> str:
     # Newline characters will be preserved in the multi-line prompt
     prompt_template = f"""You are a logical fallacy classifier. Given an incorrect reasoning step, your task is to identify its type of fallacy.
 Answer by choosing one of these fallacies:
-[fallacies]
+{FALLACIES_PLACEHOLDER}
 You should only answer the name of the fallacy.
 What type of fallacy does the following reasoning step belong to?
 {STEP_PLACEHOLDER}"""
 
     fallacies_list = get_fallacy_list()
     fallacies_string = "\n".join([f"({number + 1}) {fallacy}" for number, fallacy in enumerate(fallacies_list)])
-    prompt_template = prompt_template.replace('[fallacies]', fallacies_string)
+    prompt_template = prompt_template.replace(FALLACIES_PLACEHOLDER, fallacies_string)
 
     return prompt_template
 
