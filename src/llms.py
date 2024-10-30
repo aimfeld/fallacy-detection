@@ -201,34 +201,38 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
             repo_id="meta-llama/Meta-Llama-3.1-405B-Instruct",
             task="text-generation",
-            temperature=0,
             timeout=30.0,
-            max_new_tokens=4096, # Prevent cutoff for CoT prompt answers
         )
         # The ChatHuggingFace wrapper adds model specific special tokens, see https://huggingface.co/blog/langchain
-        llms[LLM.LLAMA_3_1_405B] = ChatHuggingFace(llm=llm)
+        # Use bind() to work around bug: https://github.com/langchain-ai/langchain/issues/23586
+        llms[LLM.LLAMA_3_1_405B] = ChatHuggingFace(llm=llm).bind(
+            max_tokens=8192, # Prevent cutoff for CoT prompt answers
+            temperature=0.0
+        ).with_retry(stop_after_attempt=3)
 
     if LLM.LLAMA_3_1_70B in llm_names:
         llm = HuggingFaceEndpoint(
             huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
             repo_id="meta-llama/Meta-Llama-3.1-70B-Instruct",
             task="text-generation",
-            temperature=0,
             timeout=20.0,
-            max_new_tokens=4096,  # Prevent cutoff for CoT prompt answers
         )
-        llms[LLM.LLAMA_3_1_70B] = ChatHuggingFace(llm=llm)
+        llms[LLM.LLAMA_3_1_70B] = ChatHuggingFace(llm=llm).bind(
+            max_tokens=8192, # Prevent cutoff for CoT prompt answers
+            temperature=0.0
+        ).with_retry(stop_after_attempt=3)
 
     if LLM.LLAMA_3_1_8B in llm_names:
         llm = HuggingFaceEndpoint(
             huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
             repo_id="meta-llama/Meta-Llama-3.1-8B-Instruct",
             task="text-generation",
-            temperature=0,
             timeout=10.0,
-            max_new_tokens=4096,  # Prevent cutoff for CoT prompt answers
         )
-        llms[LLM.LLAMA_3_1_8B] = ChatHuggingFace(llm=llm)
+        llms[LLM.LLAMA_3_1_8B] = ChatHuggingFace(llm=llm).bind(
+            max_tokens=8192, # Prevent cutoff for CoT prompt answers
+            temperature=0.0
+        ).with_retry(stop_after_attempt=3)
 
 
     return llms
