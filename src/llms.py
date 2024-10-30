@@ -21,29 +21,28 @@ class LLMProvider(Enum):
 
 
 class LLMGroup(Enum):
-    FLAGSHIP = "flagship"
-    MEDIUM = "medium"
-    LIGHTWEIGHT = "lightweight"
+    LARGE = "large" # LLMs: >20B parameters
+    SMALL = "small" # SLMs: 500M - 20B parameters
     FINE_TUNED = "fine-tuned"
 
 
 class LLM(Enum):
-    GPT_4 = ("gpt_4", "GPT-4", LLMGroup.FLAGSHIP, LLMProvider.OPENAI)
-    GPT_4O = ("gpt_4o", "GPT-4o", LLMGroup.FLAGSHIP, LLMProvider.OPENAI)
-    GPT_4O_MINI = ("gpt_4o_mini", "GPT-4o Mini", LLMGroup.LIGHTWEIGHT, LLMProvider.OPENAI)
+    GPT_4 = ("gpt_4", "GPT-4", LLMGroup.LARGE, LLMProvider.OPENAI)
+    GPT_4O = ("gpt_4o", "GPT-4o", LLMGroup.LARGE, LLMProvider.OPENAI)
+    GPT_4O_MINI = ("gpt_4o_mini", "GPT-4o Mini", LLMGroup.SMALL, LLMProvider.OPENAI)
     GPT_4O_MINI_TUNED = ("gpt_4o_mini_tuned_v1", "GPT-4o Mini Tuned", LLMGroup.FINE_TUNED, LLMProvider.OPENAI)
-    O1_MINI = ("o1_mini", "o1-mini", LLMGroup.LIGHTWEIGHT, LLMProvider.OPENAI)
-    O1_PREVIEW = ("o1_preview", "o1-preview", LLMGroup.FLAGSHIP, LLMProvider.OPENAI)
-    CLAUDE_3_5_SONNET = ("claude_3_5_sonnet", "Claude 3.5 Sonnet", LLMGroup.FLAGSHIP, LLMProvider.ANTHROPIC)
-    CLAUDE_3_OPUS = ("claude_3_opus", "Claude 3 Opus", LLMGroup.FLAGSHIP, LLMProvider.ANTHROPIC)
-    CLAUDE_3_HAIKU = ("claude_3_haiku", "Claude 3 Haiku", LLMGroup.LIGHTWEIGHT, LLMProvider.ANTHROPIC)
-    GEMINI_1_5_PRO = ("gemini_1_5_pro", "Gemini 1.5 Pro", LLMGroup.FLAGSHIP, LLMProvider.GOOGLE)
-    GEMINI_1_5_FLASH = ("gemini_1_5_flash", "Gemini 1.5 Flash", LLMGroup.LIGHTWEIGHT, LLMProvider.GOOGLE)
-    GEMINI_1_5_FLASH_8B = ("gemini_1_5_flash_8b", "Gemini 1.5 Flash 8B", LLMGroup.LIGHTWEIGHT, LLMProvider.GOOGLE)
-    LLAMA_3_1_405B = ("llama_3_1_405b", "Llama 3.1 405B", LLMGroup.FLAGSHIP, LLMProvider.META)
-    LLAMA_3_1_70B = ("llama_3_1_70b", "Llama 3.1 70B", LLMGroup.MEDIUM, LLMProvider.META)
-    LLAMA_3_1_8B = ("llama_3_1_8b", "Llama 3.1 8B", LLMGroup.LIGHTWEIGHT, LLMProvider.META)
-    MISTRAL_LARGE_2 = ("mistral_large_2", "Mistral Large 2", LLMGroup.MEDIUM, LLMProvider.MISTRAL_AI)
+    O1_MINI = ("o1_mini", "o1-mini", LLMGroup.SMALL, LLMProvider.OPENAI)
+    O1_PREVIEW = ("o1_preview", "o1-preview", LLMGroup.LARGE, LLMProvider.OPENAI)
+    CLAUDE_3_5_SONNET = ("claude_3_5_sonnet", "Claude 3.5 Sonnet", LLMGroup.LARGE, LLMProvider.ANTHROPIC)
+    CLAUDE_3_OPUS = ("claude_3_opus", "Claude 3 Opus", LLMGroup.LARGE, LLMProvider.ANTHROPIC)
+    CLAUDE_3_HAIKU = ("claude_3_haiku", "Claude 3 Haiku", LLMGroup.SMALL, LLMProvider.ANTHROPIC)
+    GEMINI_1_5_PRO = ("gemini_1_5_pro", "Gemini 1.5 Pro", LLMGroup.LARGE, LLMProvider.GOOGLE)
+    GEMINI_1_5_FLASH = ("gemini_1_5_flash", "Gemini 1.5 Flash", LLMGroup.SMALL, LLMProvider.GOOGLE)
+    GEMINI_1_5_FLASH_8B = ("gemini_1_5_flash_8b", "Gemini 1.5 Flash 8B", LLMGroup.SMALL, LLMProvider.GOOGLE)
+    LLAMA_3_1_405B = ("llama_3_1_405b", "Llama 3.1 405B", LLMGroup.LARGE, LLMProvider.META)
+    LLAMA_3_1_70B = ("llama_3_1_70b", "Llama 3.1 70B", LLMGroup.LARGE, LLMProvider.META)
+    LLAMA_3_1_8B = ("llama_3_1_8b", "Llama 3.1 8B", LLMGroup.SMALL, LLMProvider.META)
+    MISTRAL_LARGE_2 = ("mistral_large_2", "Mistral Large 2", LLMGroup.LARGE, LLMProvider.MISTRAL_AI)
 
     def __init__(self, key: str, label: str, group: LLMGroup, provider: LLMProvider):
         self._key = key
