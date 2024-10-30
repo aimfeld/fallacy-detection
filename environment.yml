@@ -1,7 +1,12 @@
+# Description: This file contains the dependencies required to run the project.
+#
+# Command for generating listing installed package versions:
+# https://github.com/conda/conda/issues/10345#issuecomment-1852838493
+
 name: hslu-thesis
 channels:
-  - defaults
   - conda-forge
+  - defaults
 dependencies:
   - python=3.11  # Specify your desired Python version
   - numpy

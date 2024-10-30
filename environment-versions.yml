@@ -1,0 +1,21 @@
+name: hslu-thesis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11  # Specify your desired Python version
+  - numpy=1.26.4
+  - pandas=2.2.3
+  - matplotlib=3.9.2
+  - seaborn=0.13.2
+  - python-dotenv=0.21.0
+  - jupyter=1.0.0
+  - langchain=0.3.4
+  - langchain-openai=0.2.3
+  - langchain-anthropic=0.2.3
+  - langchain-community=0.3.3
+  - langchain-google-genai=2.0.1
+  - langchain-huggingface=0.1.0
+  - huggingface_hub=0.24.6
+  - openai=1.51.2  # OpenAI API, used for fine-tuning
+  - pip=24.2
