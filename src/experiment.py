@@ -42,7 +42,7 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
     """
     Run the experiment to get responses from the LLMs for each reasoning step.
     """
-    for llm, llm_chat in llms.items():
+    for llm, chat_model in llms.items():
         response_column = f"{llm.key}_response"
         # Add a column to the dataframe for each LLM if it doesn't exist
         if response_column not in df_fallacies.columns:
@@ -61,7 +61,7 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
             # log(f"Prompting LLM {llm.key}: {prompt}")
 
             try:
-                response: AIMessage = llm_chat.invoke(prompt)
+                response: AIMessage = chat_model.invoke(prompt)
                 if log_responses:
                     log(f"Response from LLM {llm.key} (index={index}): {response}")
 
