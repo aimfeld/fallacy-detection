@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 
 
 def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
-                    y='llm_label', y_label= '',
-                    hue: str = None, legend_title: str = None, legend_anchor: tuple = None,
+                    y='llm_label', y_label= '', hue: str = None,
+                    legend_title: str = None, legend_anchor: tuple = None, legend_loc: str = 'upper right',
                     order: list[str] = None, hue_order: list[str] = None,
                     annotate: bool = False, xlim: tuple = (0, 100)):
     """
@@ -28,6 +28,6 @@ def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
             ax.bar_label(i, label_type='center', color='white', fmt='%.1f%%', fontsize=9)
 
     if hue and legend_title and legend_anchor:
-        plt.legend(loc='upper right', bbox_to_anchor=legend_anchor, title=legend_title)
+        plt.legend(loc=legend_loc, bbox_to_anchor=legend_anchor, title=legend_title)
 
     plt.show()
