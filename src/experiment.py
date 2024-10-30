@@ -10,6 +10,7 @@ from langchain_core.messages.ai import AIMessage
 
 # Constants
 RESPONSE_ERROR = 'error'
+STEP_PLACEHOLDER = '[step]'
 
 
 def get_fallacy_df(filename: str, only_incorrect: bool = False) -> pd.DataFrame:
@@ -57,7 +58,7 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
                 continue
 
             # Get the response from the LLM
-            prompt = prompt_template.replace('[step]', row['step'])
+            prompt = prompt_template.replace(STEP_PLACEHOLDER, row['step'])
             # log(f"Prompting LLM {llm.key}: {prompt}")
 
             try:
@@ -90,18 +91,41 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
             if sleep_seconds > 0:
                 sleep(sleep_seconds)
 
+def get_identification_zero_shot_prompt_template() -> str:
+    return f"""Is the following reasoning step correct? You can only answer "Yes" or "No".
+{STEP_PLACEHOLDER}"""
+
+
+def get_identification_few_shot_prompt_template() -> str:
+    return f"""Is the following reasoning step correct? You can only answer "Yes" or "No".
+Since if it's raining then the streets are wet and it's raining now, therefore, the streets are wet.
+Yes.
+Since I found a shell on the beach and this shell was beautifully shaped and colored, therefore, all shells are beautifully shaped and colored.
+No.
+Since I am at home or I am in the city and I am at home, therefore, I am not in the city.
+No.
+Since heavy snowfall often leads to traffic jams and traffic jams cause delays, therefore, heavy snowfall can lead to delays.
+Yes.
+{STEP_PLACEHOLDER}"""
+
+
+def get_identification_cot_prompt_template() -> str:
+    return f"""Is the following reasoning step correct?
+Let's think step by step and then answer "Yes" or "No".
+{STEP_PLACEHOLDER}"""
+
 
 def get_classification_prompt_template() -> str:
     """
     Get the template for the classification prompt
     """
     # Newline characters will be preserved in the multi-line prompt
-    prompt_template = """You are a logical fallacy classifier. Given an incorrect reasoning step, your task is to identify its type of fallacy.
+    prompt_template = f"""You are a logical fallacy classifier. Given an incorrect reasoning step, your task is to identify its type of fallacy.
 Answer by choosing one of these fallacies:
 [fallacies]
 You should only answer the name of the fallacy.
 What type of fallacy does the following reasoning step belong to?
-[step]"""
+{STEP_PLACEHOLDER}"""
 
     fallacies_list = get_fallacy_list()
     fallacies_string = "\n".join([f"({number + 1}) {fallacy}" for number, fallacy in enumerate(fallacies_list)])
