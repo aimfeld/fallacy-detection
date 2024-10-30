@@ -1,5 +1,5 @@
 """
-This module provides a function to load the fallacy dataset and add the taxonomy to it.
+This module functions for dealing with the FALLACIES dataset by Hong et al. (2024).
 """
 import pandas as pd
 import json
