@@ -16,6 +16,7 @@ dependencies:
   - langchain-community=0.3.3
   - langchain-google-genai=2.0.1
   - langchain-huggingface=0.1.0
+  - langchain-mistralai=0.2.0
   - huggingface_hub=0.24.6
   - openai=1.51.2  # OpenAI API, used for fine-tuning
   - pip=24.2

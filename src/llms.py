@@ -8,6 +8,7 @@ from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
+from langchain_mistralai import ChatMistralAI
 from enum import Enum
 
 
@@ -16,6 +17,7 @@ class LLMProvider(Enum):
     ANTHROPIC = "Anthropic"
     GOOGLE = "Google"
     META = "Meta"
+    MISTRAL_AI = "Mistral AI"
 
 
 class LLMGroup(Enum):
@@ -41,7 +43,7 @@ class LLM(Enum):
     LLAMA_3_1_405B = ("llama_3_1_405b", "Llama 3.1 405B", LLMGroup.FLAGSHIP, LLMProvider.META)
     LLAMA_3_1_70B = ("llama_3_1_70b", "Llama 3.1 70B", LLMGroup.MEDIUM, LLMProvider.META)
     LLAMA_3_1_8B = ("llama_3_1_8b", "Llama 3.1 8B", LLMGroup.LIGHTWEIGHT, LLMProvider.META)
-
+    MISTRAL_LARGE_2 = ("mistral_large_2", "Mistral Large 2", LLMGroup.MEDIUM, LLMProvider.MISTRAL_AI)
 
     def __init__(self, key: str, label: str, group: LLMGroup, provider: LLMProvider):
         self._key = key
@@ -82,7 +84,13 @@ def init_langchain():
 def get_llms(llm_names: list[LLM]) -> LLMs:
     llms: LLMs = {}
 
-    # OpenAI models: https://platform.openai.com/docs/models
+    # -------------------------------------------------------------------------
+    # OpenAI
+    # https://platform.openai.com/usage
+    # https://platform.openai.com/docs/models
+    # https://platform.openai.com/settings/organization/billing/overview
+    # https://openai.com/api/pricing/
+    # -------------------------------------------------------------------------
     if LLM.GPT_4 in llm_names:
         # https://platform.openai.com/docs/models
         llms[LLM.GPT_4] = ChatOpenAI(
@@ -138,6 +146,11 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             max_retries=2,
         )
 
+    # -------------------------------------------------------------------------
+    # Anthropic
+    # https://console.anthropic.com/dashboard
+    # https://docs.anthropic.com/en/docs/about-claude/models
+    # -------------------------------------------------------------------------
     if LLM.CLAUDE_3_5_SONNET in llm_names:
         # https://python.langchain.com/docs/integrations/platforms/anthropic/
         llms[LLM.CLAUDE_3_5_SONNET] = ChatAnthropic(
@@ -168,6 +181,12 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             max_retries=2,
         )
 
+    # -------------------------------------------------------------------------
+    # Google
+    # https://python.langchain.com/docs/integrations/chat/google_generative_ai/
+    # https://aistudio.google.com/app/apikey
+    # https://console.cloud.google.com/billing
+    # -------------------------------------------------------------------------
     if LLM.GEMINI_1_5_PRO in llm_names:
         llms[LLM.GEMINI_1_5_PRO] = ChatGoogleGenerativeAI(
             api_key=os.getenv("GOOGLE_API_KEY"),
@@ -195,7 +214,10 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             max_retries=2,
         )
 
+    # -------------------------------------------------------------------------
     # Meta models: https://huggingface.co/meta-llama
+    # https://huggingface.co/
+    # -------------------------------------------------------------------------
     if LLM.LLAMA_3_1_405B in llm_names:
         llm = HuggingFaceEndpoint(
             huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
@@ -203,12 +225,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             task="text-generation",
             timeout=30.0,
         )
-        # The ChatHuggingFace wrapper adds model specific special tokens, see https://huggingface.co/blog/langchain
-        # Use bind() to work around bug: https://github.com/langchain-ai/langchain/issues/23586
-        llms[LLM.LLAMA_3_1_405B] = ChatHuggingFace(llm=llm).bind(
-            max_tokens=4096, # Prevent cutoff for CoT prompt answers
-            temperature=0.0
-        ).with_retry(stop_after_attempt=3)
+        llms[LLM.LLAMA_3_1_405B] = _get_chat_hugging_face(llm)
 
     if LLM.LLAMA_3_1_70B in llm_names:
         llm = HuggingFaceEndpoint(
@@ -217,10 +234,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             task="text-generation",
             timeout=20.0,
         )
-        llms[LLM.LLAMA_3_1_70B] = ChatHuggingFace(llm=llm).bind(
-            max_tokens=4096, # Prevent cutoff for CoT prompt answers
-            temperature=0.0
-        ).with_retry(stop_after_attempt=3)
+        llms[LLM.LLAMA_3_1_70B] = _get_chat_hugging_face(llm)
 
     if LLM.LLAMA_3_1_8B in llm_names:
         llm = HuggingFaceEndpoint(
@@ -229,10 +243,32 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             task="text-generation",
             timeout=10.0,
         )
-        llms[LLM.LLAMA_3_1_8B] = ChatHuggingFace(llm=llm).bind(
-            max_tokens=4096, # Prevent cutoff for CoT prompt answers. inputs tokens + max_tokens must be <= 8192
-            temperature=0.0
-        ).with_retry(stop_after_attempt=3)
+        llms[LLM.LLAMA_3_1_8B] = _get_chat_hugging_face(llm)
 
+
+    # -------------------------------------------------------------------------
+    # Mistral AI
+    # https://console.mistral.ai/
+    # https://docs.mistral.ai/getting-started/models/models_overview/
+    # -------------------------------------------------------------------------
+    if LLM.MISTRAL_LARGE_2 in llm_names:
+        llms[LLM.MISTRAL_LARGE_2] = ChatMistralAI(
+            api_key=os.getenv("MISTRAL_API_KEY"),
+            model="mistral-large-2407",
+            temperature=0,
+            timeout=3.0,
+            max_retries=2,
+        )
 
     return llms
+
+
+def _get_chat_hugging_face(llm: HuggingFaceEndpoint) -> Runnable:
+    """
+    The ChatHuggingFace wrapper adds model specific special tokens, see https://huggingface.co/blog/langchain
+    Use bind() to work around bug: https://github.com/langchain-ai/langchain/issues/23586
+    """
+    return ChatHuggingFace(llm=llm).bind(
+        max_tokens=4096, # Prevent cutoff for CoT prompt answers
+        temperature=0.0
+    ).with_retry(stop_after_attempt=3)
