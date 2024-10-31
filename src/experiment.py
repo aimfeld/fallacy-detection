@@ -84,7 +84,7 @@ def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: s
             if response_count % 100 == 0:
                 log(f"Processed {response_count} responses for LLM {llm.key} (index={index}).")
 
-            if error_count > 10:
+            if error_count > 30:
                 log(f"Error count too high for LLM {llm.key}, skipping model.")
                 break
 
