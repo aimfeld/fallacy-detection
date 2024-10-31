@@ -37,24 +37,31 @@ def _get_identification_prediction(label: int, response: str) -> int | None:
 
 
 def add_classification_scores(df_fallacies: pd.DataFrame):
+    fallacies = get_fallacy_list()
     for llm in LLM:
         response_column = f"{llm.key}_response"
         if response_column not in df_fallacies.columns:
             continue
 
+        pred_column = f"{llm.key}_pred"
         score_column = f"{llm.key}_score"
-        df_fallacies[score_column] = df_fallacies.apply(
-            lambda row: _get_classification_score(row["fallacy"], row[response_column]), axis=1
+        df_fallacies[pred_column] = df_fallacies.apply(
+            lambda row: _get_classification_prediction(fallacies, row[response_column]), axis=1
+        )
+        df_fallacies[score_column] = (
+                ~df_fallacies[pred_column].isna() & (df_fallacies['fallacy'] == df_fallacies[pred_column])
         ).astype('UInt8')
 
 
-def _get_classification_score(fallacy: str, response: str):
+def _get_classification_prediction(fallacies: list[str], response: str) -> str | None:
     if response == '' or response == RESPONSE_ERROR:
-        return pd.NA
+        return None
 
-    contains_fallacy = bool(re.search(fallacy, response, re.IGNORECASE))
+    for fallacy in fallacies:
+        if bool(re.search(fallacy, response, re.IGNORECASE)):
+            return fallacy
 
-    return 1 if contains_fallacy else 0
+    return None
 
 
 def get_macro_accuracies(df_fallacies: pd.DataFrame):
