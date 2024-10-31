@@ -25,14 +25,17 @@ def _get_fallacy_identification_score(label: int, response: str):
     contains_yes = bool(re.search(r'\bYes\b', response))
     contains_no = bool(re.search(r'\bNo\b', response))
 
+    if not contains_yes and not contains_no:
+        return pd.NA # Empty response, or error, or not a valid answer
+
     if contains_yes and not contains_no:
         response_label = 0  # Reasoning step is evaluated as valid
     elif contains_no and not contains_yes:
         response_label = 1  # Reasoning step is evaluated as invalid
     else:
-        return pd.NA  # Response does not contain a valid answer
+        response_label = pd.NA  # E.g. when response is "Yes. No. No. Yes. Yes." for few-shot prompt
 
-    return 1 if response_label == label else 0
+    return 1 if response_label is not pd.NA and response_label == label else 0
 
 
 def score_fallacy_classification(df_fallacies: pd.DataFrame):
