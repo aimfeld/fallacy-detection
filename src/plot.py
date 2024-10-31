@@ -58,14 +58,14 @@ def plot_confusion_matrix(metrics: pd.Series, title: str, figsize=(6, 5)):
                 )
 
     # Add labels
-    plt.title(title)
-    plt.xlabel('True Label', labelpad=10)
-    plt.ylabel('Predicted Label', labelpad=10)
+    plt.title(title, pad=10)
+    plt.xlabel('Actual', labelpad=10)
+    plt.ylabel('Predicted', labelpad=10)
 
     # Add metrics text box
     accuracy, precision, recall, f1 = get_confusion_scores(metrics['TP'], metrics['TN'], metrics['FP'], metrics['FN'])
     metrics_text = f"Accuracy: {accuracy:.3f}\nPrecision: {precision:.3f}\nRecall: {recall:.3f}\nF1-Score: {f1:.3f}"
-    plt.text(2.1, 0.4, metrics_text, fontsize=10)
+    plt.text(2.1, 0.5, metrics_text, fontsize=10)
 
     plt.tight_layout()
     plt.show()

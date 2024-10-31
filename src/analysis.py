@@ -5,6 +5,7 @@ import pandas as pd
 import re
 from .llms import LLM
 from .experiment import RESPONSE_ERROR
+from .fallacies import get_fallacy_list
 
 
 def add_identification_scores(df_fallacies: pd.DataFrame):
@@ -102,19 +103,31 @@ def add_llm_info(df: pd.DataFrame, label=False, group=False, provider=False):
 
 
 def get_identification_confusion_metrics(df_fallacies: pd.DataFrame) -> pd.DataFrame:
-    # Get all model columns
+    """
+    Returns a multi-index DataFrame with confusion metrics for each LLM and fallacy.
+    """
     pred_cols = [col for col in df_fallacies.columns if col.endswith('_pred')]
+    llms = {llm.key: llm for llm in LLM}
+    rows = []
+    for pred_col in pred_cols:
+        llm_key = pred_col.replace('_pred', '')
+        for fallacy in get_fallacy_list():
+            df_fallacy = df_fallacies[df_fallacies['fallacy'] == fallacy]
+            metrics = _get_confusion_metrics(df_fallacy, 'label', pred_col)
 
-    # Calculate metrics for each model
-    df_confusion = pd.DataFrame(
-        [_get_confusion_metrics(df_fallacies, 'label', pred_col) for pred_col in pred_cols],
-        index=[col.replace('_pred', '') for col in pred_cols]
-    )
+            metrics['llm'] = llm_key
+            metrics['llm_group'] = llms[llm_key].group.value
+            metrics['fallacy'] = fallacy
+            metrics['category'] = df_fallacy['category'].iloc[0]
+            metrics['subcategory'] = df_fallacy['subcategory'].iloc[0]
 
-    int_cols = ['TP', 'TN', 'FP', 'FN']
-    df_confusion[int_cols] = df_confusion[int_cols].astype('UInt16')
+            rows.append(metrics)
 
-    return df_confusion
+    # Create multi-index DataFrame
+    df_result = pd.DataFrame(rows)
+    df_result = df_result.set_index(['llm', 'llm_group', 'category', 'subcategory', 'fallacy'])
+
+    return df_result
 
 
 def _get_confusion_metrics(df: pd.DataFrame, true_col: str, pred_col: str) -> pd.Series:
