@@ -2,8 +2,10 @@
 This module contains functions for plotting data.
 """
 import seaborn as sns
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from .analysis import get_confusion_scores
 
 
 def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
@@ -15,7 +17,8 @@ def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
     Plot horizontal bar plot of accuracies
     """
     _, ax = plt.subplots(figsize=figsize)
-    sns.barplot(x='accuracy', y=y, data=data, hue=hue, order=order, hue_order=hue_order, ax=ax)
+    # reset_index() prevents reindexing error when there are duplicate indices
+    sns.barplot(x='accuracy', y=y, data=data.reset_index(), hue=hue, order=order, hue_order=hue_order, ax=ax)
     plt.title(title)
     plt.xlabel('Accuracy (%)')
     plt.ylabel(y_label)
@@ -30,4 +33,39 @@ def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
     if hue and legend_title and legend_anchor:
         plt.legend(loc=legend_loc, bbox_to_anchor=legend_anchor, title=legend_title)
 
+    plt.show()
+
+
+def plot_confusion_matrix(metrics: pd.Series, title: str, figsize=(6, 5)):
+    confusion_matrix = np.array([
+        [metrics['TP'], metrics['FP']],
+        [metrics['FN'], metrics['TN']]
+    ])
+
+    # Create figure and axes
+    plt.figure(figsize=figsize)
+
+    # Create heatmap
+    sns.heatmap(confusion_matrix,
+                annot=True,
+                fmt='.0f',
+                cmap='YlGnBu',
+                cbar=False,
+                square=True,
+                yticklabels=['fallacy', 'no fallacy'],
+                xticklabels=['fallacy', 'no fallacy'],
+                annot_kws={'size': 12}
+                )
+
+    # Add labels
+    plt.title(title)
+    plt.xlabel('True Label', labelpad=10)
+    plt.ylabel('Predicted Label', labelpad=10)
+
+    # Add metrics text box
+    accuracy, precision, recall, f1 = get_confusion_scores(metrics['TP'], metrics['TN'], metrics['FP'], metrics['FN'])
+    metrics_text = f"Accuracy: {accuracy:.3f}\nPrecision: {precision:.3f}\nRecall: {recall:.3f}\nF1-Score: {f1:.3f}"
+    plt.text(2.1, 0.4, metrics_text, fontsize=10)
+
+    plt.tight_layout()
     plt.show()

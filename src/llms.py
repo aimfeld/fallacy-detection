@@ -42,8 +42,8 @@ class LLM(Enum):
     LLAMA_3_1_405B = ("llama_3_1_405b", "Llama 3.1 405B", LLMGroup.LARGE, LLMProvider.META)
     LLAMA_3_1_70B = ("llama_3_1_70b", "Llama 3.1 70B", LLMGroup.LARGE, LLMProvider.META)
     LLAMA_3_1_8B = ("llama_3_1_8b", "Llama 3.1 8B", LLMGroup.SMALL, LLMProvider.META)
-    MISTRAL_LARGE_2 = ("mistral_large_2", "Mistral Large", LLMGroup.LARGE, LLMProvider.MISTRAL_AI)
-    MISTRAL_SMALL_2 = ("mistral_small_2", "Mistral Small", LLMGroup.SMALL, LLMProvider.MISTRAL_AI)
+    MISTRAL_LARGE_2 = ("mistral_large_2", "Mistral Large", LLMGroup.LARGE, LLMProvider.MISTRAL_AI) # 123B
+    MISTRAL_SMALL_2 = ("mistral_small_2", "Mistral Small", LLMGroup.SMALL, LLMProvider.MISTRAL_AI) # 22B
 
     def __init__(self, key: str, label: str, group: LLMGroup, provider: LLMProvider):
         self._key = key
@@ -256,8 +256,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             api_key=os.getenv("MISTRAL_API_KEY"),
             model="mistral-large-2407",
             temperature=0,
-            timeout=3.0,
-            max_retries=2,
+            timeout=30.0, # This API times out a lot
+            max_retries=5,
         )
 
     if LLM.MISTRAL_SMALL_2 in llm_names:
@@ -265,8 +265,8 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             api_key=os.getenv("MISTRAL_API_KEY"),
             model="mistral-small-2409",
             temperature=0,
-            timeout=3.0,
-            max_retries=2,
+            timeout=30.0, # This API times out a lot
+            max_retries=5,
         )
 
     return llms
