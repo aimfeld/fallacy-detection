@@ -10,7 +10,7 @@ from .analysis import get_confusion_scores
 
 def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
                     y='llm_label', y_label= '', hue: str = None,
-                    legend_title: str = None, legend_anchor: tuple = None, legend_loc: str = 'upper right',
+                    legend_title: str = None, legend_loc: str = 'lower right', legend_anchor: tuple = (1, 0),
                     order: list[str] = None, hue_order: list[str] = None,
                     annotate: bool = False, xlim: tuple = (0, 100)):
     """

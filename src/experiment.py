@@ -32,6 +32,8 @@ def get_fallacy_df(filename: str, only_incorrect: bool = False) -> pd.DataFrame:
         # Select only incorrect reasoning steps
         df = df[df['label'] == 1]
 
+    df['label'] = df['label'].astype('UInt8')
+
     return df
 
 

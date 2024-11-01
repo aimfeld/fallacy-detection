@@ -8,6 +8,24 @@ from .experiment import RESPONSE_ERROR
 from .fallacies import get_fallacy_list
 
 
+def get_sanity_check(df_fallacies: pd.DataFrame) -> pd.DataFrame:
+    """
+    Count the number of missing responses and invalid predictions for each LLM.
+    Invalid predictions result from missing responses, response errors, or failed extraction of Yes/No or fallacy type.
+    """
+    response_cols = [col for col in df_fallacies if col.endswith('_response')]
+
+    missing_responses: pd.Series = df_fallacies[response_cols].isin(['', RESPONSE_ERROR]).sum()
+    missing_responses.index = missing_responses.index.str.removesuffix('_response')
+
+    prediction_cols = [col for col in df_fallacies if col.endswith('_pred')]
+    invalid_predictions: pd.Series = df_fallacies[prediction_cols].isna().sum()
+    invalid_predictions.index = invalid_predictions.index.str.removesuffix('_pred')
+
+    return pd.DataFrame([missing_responses, invalid_predictions],
+                        index=['missing_responses', 'invalid_predictions']).T
+
+
 def add_identification_scores(df_fallacies: pd.DataFrame):
     for llm in LLM:
         response_column = f"{llm.key}_response"
@@ -33,7 +51,7 @@ def _get_identification_prediction(label: int, response: str) -> int | None:
     if contains_yes == contains_no:
         return None  # Contains neither "Yes" nor "No", or contains both (e.g. "Yes. No. No. Yes. Yes."
 
-    return 0 if contains_yes else 1 # Yes means reasoning step is correct, therefore 0, not a fallacy
+    return 0 if contains_yes else 1  # Yes means reasoning step is correct, therefore 0, not a fallacy
 
 
 def add_classification_scores(df_fallacies: pd.DataFrame):
@@ -70,7 +88,7 @@ def get_macro_accuracies(df_fallacies: pd.DataFrame):
     subcategory and category, as in Hong et al. (2024).
     """
     group_columns = ['category', 'subcategory', 'fallacy']
-    score_columns =  df_fallacies.columns[df_fallacies.columns.str.endswith('_score')].tolist()
+    score_columns = df_fallacies.columns[df_fallacies.columns.str.endswith('_score')].tolist()
 
     # Rename LLM columns
     df_scores = df_fallacies[group_columns + score_columns]
@@ -137,6 +155,7 @@ def get_identification_confusion_metrics(df_fallacies: pd.DataFrame) -> pd.DataF
     return df_result
 
 
+# noinspection PyUnresolvedReferences
 def _get_confusion_metrics(df: pd.DataFrame, true_col: str, pred_col: str) -> pd.Series:
     """Calculate basic confusion matrix values"""
 
@@ -151,6 +170,7 @@ def _get_confusion_metrics(df: pd.DataFrame, true_col: str, pred_col: str) -> pd
         'FP': fp,
         'FN': fn,
     })
+
 
 def add_confusion_scores(df_confusion: pd.DataFrame) -> pd.DataFrame:
     df = df_confusion.copy()
