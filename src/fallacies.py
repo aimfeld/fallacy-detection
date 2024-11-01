@@ -7,7 +7,7 @@ import json
 
 def create_fallacy_df() -> pd.DataFrame:
     df = pd.read_json('fallacies/step_fallacy.test.jsonl', lines=True)
-    _add_taxonomy(df)
+    add_taxonomy(df)
 
     df['step'] = df['step'].apply(_remove_square_brackets)
 
@@ -25,7 +25,10 @@ def _remove_square_brackets(string):
     return string.replace("[", "").replace("]", "")
 
 
-def _add_taxonomy(df_fallacies):
+def add_taxonomy(df_fallacies):
+    """
+    Add columns for the fallacy category and subcategory to the dataframe.
+    """
     with open('fallacies/fallacy_taxonomy.json') as f:
         taxonomy = json.load(f)
 

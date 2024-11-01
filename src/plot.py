@@ -18,9 +18,13 @@ def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
     """
     Plot horizontal bar plot of accuracies
     """
+    df = data.copy()
+    if 'subcategory' in df.columns:
+        df['subcategory'] = df['subcategory'].cat.remove_unused_categories() # Don't show unused subcategories in the plot
+
     _, ax = plt.subplots(figsize=figsize)
     # reset_index() prevents reindexing error when there are duplicate indices
-    sns.barplot(x='accuracy', y=y, data=data.reset_index(), hue=hue, order=order, hue_order=hue_order, ax=ax)
+    sns.barplot(x='accuracy', y=y, data=df.reset_index(), hue=hue, order=order, hue_order=hue_order, ax=ax)
     plt.title(title)
     plt.xlabel('Accuracy (%)')
     plt.ylabel(y_label)
@@ -35,11 +39,17 @@ def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
     if hue and legend_title and legend_anchor:
         plt.legend(loc=legend_loc, bbox_to_anchor=legend_anchor, title=legend_title)
 
-    _save_plot(title)
+    save_plot(title)
     plt.show()
 
 
-def plot_confusion_matrix(metrics: pd.Series, title: str, figsize=(6, 5)):
+def plot_identification_confusion_matrix(metrics: pd.Series, title: str, figsize=(6, 5)):
+    # Create custom annotation labels
+    labels = np.array([
+        [f'TP\n{metrics["TP"]}', f'FP\n{metrics["FP"]}'],
+        [f'FN\n{metrics["FN"]}', f'TN\n{metrics["TN"]}']
+    ])
+
     confusion_matrix = np.array([
         [metrics['TP'], metrics['FP']],
         [metrics['FN'], metrics['TN']]
@@ -50,8 +60,8 @@ def plot_confusion_matrix(metrics: pd.Series, title: str, figsize=(6, 5)):
 
     # Create heatmap
     sns.heatmap(confusion_matrix,
-                annot=True,
-                fmt='.0f',
+                annot=labels,
+                fmt='',
                 cmap='YlGnBu',
                 cbar=False,
                 square=True,
@@ -72,10 +82,37 @@ def plot_confusion_matrix(metrics: pd.Series, title: str, figsize=(6, 5)):
     plt.text(2.1, 0.6, metrics_text, fontsize=10)
 
     plt.tight_layout()
-    _save_plot(title)
+    save_plot(title)
     plt.show()
 
 
-def _save_plot(title: str):
+def plot_classification_confusion_matrix(df_confusion, title: str, figsize=(10, 10)):
+    # Create figure and axes
+    plt.figure(figsize=figsize)
+
+    # Create heatmap
+    sns.heatmap(
+        df_confusion,
+        annot=True,
+        cmap='YlGnBu',
+        cbar=False,
+        square=True,
+        yticklabels=df_confusion.columns,
+        xticklabels=df_confusion.columns,
+        annot_kws={'size': 12}
+    )
+
+    # Add labels
+    plt.title(title, pad=10)
+    plt.xlabel('Actual', labelpad=10)
+    plt.ylabel('Predicted', labelpad=10)
+    plt.xticks(rotation=45, ha='right')
+
+    plt.tight_layout()
+    save_plot(title)
+    plt.show()
+
+
+def save_plot(title: str):
     plt.savefig(f'plot/{title}.svg', format='svg', dpi=DPI, bbox_inches='tight')
     plt.savefig(f'plot/{title}.png', dpi=DPI, bbox_inches='tight')

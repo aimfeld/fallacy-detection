@@ -6,7 +6,7 @@ import numpy as np
 import re
 from .llms import LLM
 from .experiment import RESPONSE_ERROR
-from .fallacies import get_fallacy_list
+from .fallacies import get_fallacy_list, add_taxonomy
 from statsmodels.stats.contingency_tables import mcnemar
 
 
@@ -71,6 +71,7 @@ def add_classification_scores(df_fallacies: pd.DataFrame):
         df_fallacies[pred_column] = df_fallacies.apply(
             lambda row: _get_classification_prediction(fallacies, row[response_column]), axis=1
         )
+        df_fallacies[pred_column] = pd.Categorical(df_fallacies[pred_column], categories=fallacies)
         df_fallacies[score_column] = (
                 ~df_fallacies[pred_column].isna() & (df_fallacies['fallacy'] == df_fallacies[pred_column])
         ).astype('UInt8')
@@ -100,9 +101,9 @@ def get_macro_accuracies(df_fallacies: pd.DataFrame):
     df_scores.columns = df_scores.columns.str.removesuffix('_score')
 
     # Calculate macro-averages, giving equal weight to each category and subcategory
-    df_type_accuracies = df_scores.groupby(['category', 'subcategory', 'fallacy']).mean() * 100
-    df_subcategory_accuracies = df_type_accuracies.groupby(['category', 'subcategory']).mean()
-    df_category_accuracies = df_subcategory_accuracies.groupby(['category']).mean()
+    df_type_accuracies = df_scores.groupby(['category', 'subcategory', 'fallacy'], observed=True).mean() * 100
+    df_subcategory_accuracies = df_type_accuracies.groupby(['category', 'subcategory'], observed=True).mean()
+    df_category_accuracies = df_subcategory_accuracies.groupby(['category'], observed=True).mean()
     df_global_accuracies = df_category_accuracies.mean().to_frame().T
     df_global_accuracies.index = ['accuracy']
 
@@ -126,8 +127,10 @@ def add_llm_info(df: pd.DataFrame, label=False, group=False, provider=False):
         df_info['llm_label'] = df_info.apply(lambda row: llms[row.name].label, axis=1)
     if group or add_all:
         df_info['llm_group'] = df_info.apply(lambda row: llms[row.name].group.value, axis=1)
+        df_info['llm_group'] = pd.Categorical(df_info['llm_group'])
     if provider or add_all:
         df_info['llm_provider'] = df_info.apply(lambda row: llms[row.name].provider.value, axis=1)
+        df_info['llm_provider'] = pd.Categorical(df_info['llm_provider'])
 
     return df_info
 
@@ -176,15 +179,120 @@ def _get_confusion_metrics(df: pd.DataFrame, true_col: str, pred_col: str) -> pd
         'FN': fn,
     })
 
+def get_confusion_matrix(df_fallacies: pd.DataFrame) -> pd.DataFrame:
+    """
+    Returns a multi-index DataFrame with confusion matrices for each LLM and fallacy.
+    Columns are actual fallacies, rows are predicted fallacies.
+    """
+    pred_cols = [col for col in df_fallacies.columns if col.endswith('_pred')]
+    llms = {llm.key: llm for llm in LLM}
+
+    df_confusion_list = []
+    for pred_col in pred_cols:
+        llm_key = pred_col.replace('_pred', '')
+
+        # Create confusion matrix for current LLM
+        df_confusion = pd.crosstab(df_fallacies['gpt_4o_pred'], df_fallacies['fallacy'],
+                                   rownames=['predicted'], colnames=['actual'], dropna=False)
+
+        # Drop invalid predictions to get an n*n confusion matrix
+        df_confusion = df_confusion[df_confusion.index.notna()]
+
+        df_confusion['llm'] = llm_key
+        df_confusion['llm_group'] = llms[llm_key].group.value
+
+        df_confusion_list.append(df_confusion)
+
+    # Create multi-index DataFrame
+    df_result = pd.concat(df_confusion_list)
+    df_result.index.name = 'fallacy'
+    df_result = df_result.reset_index()
+    add_taxonomy(df_result)
+    df_result = df_result.set_index(['llm', 'llm_group', 'category', 'subcategory', 'fallacy'])
+
+    return df_result
+
+def sort_confusion_matrix(df_conf_matrix: pd.DataFrame) -> pd.DataFrame:
+    """
+    Sort the confusion matrix by the sum of off-diagonal elements.
+    """
+    # Get off-diagonal sums using numpy
+    off_diag_sums = df_conf_matrix.values.sum(axis=1) - np.diagonal(df_conf_matrix)
+    sorted_idx = pd.Series(off_diag_sums, index=df_conf_matrix.index).sort_values(ascending=True).index
+    return df_conf_matrix.loc[sorted_idx, sorted_idx]
+
+
+def get_mispredictions(df_conf_matrix: pd.DataFrame, n_mispredictions: int = 3) -> pd.DataFrame:
+    """
+    Analyze a confusion matrix and return a DataFrame with accuracy and top N mispredictions per label.
+
+    Parameters:
+    df_conf_matrix (pd.DataFrame): Confusion matrix where rows are predictions and columns are true labels
+    n_mispredictions (int): Number of top mispredictions to include per label
+
+    Returns:
+    pd.DataFrame: Analysis results with accuracy and top N mispredictions per label
+    """
+
+    # Generate column names dynamically based on n_mispredictions
+    result_columns = ['accuracy']
+    for i in range(1, n_mispredictions + 1):
+        result_columns.extend([f'misprediction_{i}', f'count_{i}'])
+
+    # Initialize the result DataFrame
+    df_result = pd.DataFrame(index=df_conf_matrix.columns, columns=result_columns)
+
+    # Process each true label (column)
+    for true_label in df_conf_matrix.columns:
+        # Get the column for this true label
+        col = df_conf_matrix[true_label]
+
+        # Calculate accuracy
+        total = col.sum()
+        correct = col[true_label]
+        accuracy = correct / total if total > 0 else 0
+
+        # Get mispredictions (exclude the correct prediction)
+        mispredictions = col[col.index != true_label]
+
+        # Sort mispredictions in descending order and get top n
+        top_n_mispredictions = mispredictions[mispredictions > 0].sort_values(ascending=False).head(n_mispredictions)
+
+        # Fill the result row
+        df_result.at[true_label, 'accuracy'] = accuracy
+
+        # Fill misprediction information
+        for i in range(1, n_mispredictions + 1):
+            if i <= len(top_n_mispredictions):
+                label = top_n_mispredictions.index[i - 1]
+                count = top_n_mispredictions.iloc[i - 1]
+            else:
+                label = ''
+                count = pd.NA
+
+            df_result.at[true_label, f'misprediction_{i}'] = label
+            df_result.at[true_label, f'count_{i}'] = count
+
+    df_result.sort_values(by=['accuracy', 'count_1'], ascending=[True, False], inplace=True)
+
+    # Convert accuracy to float and counts to int
+    df_result['accuracy'] = df_result['accuracy'].astype(float)
+    count_columns = [f'count_{i}' for i in range(1, n_mispredictions + 1)]
+    df_result[count_columns] = df_result[count_columns].astype('UInt16')
+
+    return df_result
+
 
 def add_confusion_scores(df_confusion: pd.DataFrame) -> pd.DataFrame:
     df = df_confusion.copy()
     for index, row in df.iterrows():
         accuracy, precision, recall, f1 = get_confusion_scores(row['TP'], row['TN'], row['FP'], row['FN'])
+        mcnemar_p = mcnemar_test(row['FP'], row['FN'])
         df.loc[index, 'Accuracy'] = accuracy
         df.loc[index, 'Precision'] = precision
         df.loc[index, 'Recall'] = recall
         df.loc[index, 'F1'] = f1
+        df.loc[index, 'McNemar-P'] = mcnemar_p
 
     return df
 
