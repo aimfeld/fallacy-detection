@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from .analysis import get_confusion_scores, mcnemar_test
 
+DPI = 600 # Quality of saved .png
 
 
 def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
@@ -29,11 +30,12 @@ def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
 
     if annotate:
         for i in ax.containers:
-            ax.bar_label(i, label_type='edge', color='black', fmt='%.1f%%', padding=5, fontsize=9)
+            ax.bar_label(i, label_type='edge', color='#555555', fmt='%.1f%%', padding=5, fontsize=9)
 
     if hue and legend_title and legend_anchor:
         plt.legend(loc=legend_loc, bbox_to_anchor=legend_anchor, title=legend_title)
 
+    _save_plot(title)
     plt.show()
 
 
@@ -70,4 +72,10 @@ def plot_confusion_matrix(metrics: pd.Series, title: str, figsize=(6, 5)):
     plt.text(2.1, 0.6, metrics_text, fontsize=10)
 
     plt.tight_layout()
+    _save_plot(title)
     plt.show()
+
+
+def _save_plot(title: str):
+    plt.savefig(f'plot/{title}.svg', format='svg', dpi=DPI, bbox_inches='tight')
+    plt.savefig(f'plot/{title}.png', dpi=DPI, bbox_inches='tight')
