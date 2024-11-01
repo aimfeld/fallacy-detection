@@ -2,10 +2,12 @@
 This module contains functions for analyzing the fallacy experiments.
 """
 import pandas as pd
+import numpy as np
 import re
 from .llms import LLM
 from .experiment import RESPONSE_ERROR
 from .fallacies import get_fallacy_list
+from statsmodels.stats.contingency_tables import mcnemar
 
 
 def get_sanity_check(df_fallacies: pd.DataFrame) -> pd.DataFrame:
@@ -14,6 +16,8 @@ def get_sanity_check(df_fallacies: pd.DataFrame) -> pd.DataFrame:
     Invalid predictions result from missing responses, response errors, or failed extraction of Yes/No or fallacy type.
     """
     response_cols = [col for col in df_fallacies if col.endswith('_response')]
+    response_lengths: pd.Series = df_fallacies[response_cols].apply(lambda x: x.str.len().mean().round(1))
+    response_lengths.index = response_lengths.index.str.removesuffix('_response')
 
     missing_responses: pd.Series = df_fallacies[response_cols].isin(['', RESPONSE_ERROR]).sum()
     missing_responses.index = missing_responses.index.str.removesuffix('_response')
@@ -22,8 +26,9 @@ def get_sanity_check(df_fallacies: pd.DataFrame) -> pd.DataFrame:
     invalid_predictions: pd.Series = df_fallacies[prediction_cols].isna().sum()
     invalid_predictions.index = invalid_predictions.index.str.removesuffix('_pred')
 
-    return pd.DataFrame([missing_responses, invalid_predictions],
-                        index=['missing_responses', 'invalid_predictions']).T
+    types = { 'response_length_mean': 'float64', 'missing_responses': 'int16', 'invalid_predictions': 'int16'}
+    return pd.DataFrame([response_lengths, missing_responses, invalid_predictions],
+                        index=['response_length_mean', 'missing_responses', 'invalid_predictions'], ).T.astype(types)
 
 
 def add_identification_scores(df_fallacies: pd.DataFrame):
@@ -191,3 +196,19 @@ def get_confusion_scores(tp: int, tn: int, fp: int, fn: int) -> tuple[float, flo
     f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
     return accuracy, precision, recall, f1
+
+
+def mcnemar_test(fp: int, fn: int) -> float:
+    """
+    Test whether the false positives (FP) and false negatives (FN) are significantly different using McNemar's test.
+    McNemar's test is the most appropriate choice because:
+    - It's specifically designed for comparing paired nominal data in a confusion matrix
+    - It's particularly suitable when you want to compare the off-diagonal elements of a 2x2 confusion matrix
+    """
+    # Create the contingency table for McNemar's test
+    # Note: Only the off-diagonal elements (FP and FN) are used
+    contingency_table = np.array([[0, fp],
+                                  [fn, 0]])
+
+    # Perform McNemar's test
+    return mcnemar(contingency_table).pvalue

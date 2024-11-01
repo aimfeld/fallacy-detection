@@ -5,7 +5,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from .analysis import get_confusion_scores
+from .analysis import get_confusion_scores, mcnemar_test
+
 
 
 def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
@@ -28,7 +29,7 @@ def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
 
     if annotate:
         for i in ax.containers:
-            ax.bar_label(i, label_type='center', color='white', fmt='%.1f%%', fontsize=9)
+            ax.bar_label(i, label_type='edge', color='black', fmt='%.1f%%', padding=5, fontsize=9)
 
     if hue and legend_title and legend_anchor:
         plt.legend(loc=legend_loc, bbox_to_anchor=legend_anchor, title=legend_title)
@@ -64,8 +65,9 @@ def plot_confusion_matrix(metrics: pd.Series, title: str, figsize=(6, 5)):
 
     # Add metrics text box
     accuracy, precision, recall, f1 = get_confusion_scores(metrics['TP'], metrics['TN'], metrics['FP'], metrics['FN'])
-    metrics_text = f"Accuracy: {accuracy:.3f}\nPrecision: {precision:.3f}\nRecall: {recall:.3f}\nF1-Score: {f1:.3f}"
-    plt.text(2.1, 0.5, metrics_text, fontsize=10)
+    mcnemar_p = mcnemar_test(metrics['FP'], metrics['FN'])
+    metrics_text = f"Accuracy: {accuracy:.3f}\nPrecision: {precision:.3f}\nRecall: {recall:.3f}\nF1-Score: {f1:.3f}\nMcNemar-P: {mcnemar_p:.3f}"
+    plt.text(2.1, 0.6, metrics_text, fontsize=10)
 
     plt.tight_layout()
     plt.show()
