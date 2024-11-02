@@ -24,6 +24,7 @@ class LLMGroup(Enum):
     LARGE = "large" # LLMs: >20B parameters
     SMALL = "small" # SLMs: 500M - 20B parameters
     FINE_TUNED = "fine-tuned"
+    REASONING = "reasoning" # Models with internal reasoning capabilities
 
 
 class LLM(Enum):
@@ -31,8 +32,8 @@ class LLM(Enum):
     GPT_4O = ("gpt_4o", "GPT-4o", LLMGroup.LARGE, LLMProvider.OPENAI)
     GPT_4O_MINI = ("gpt_4o_mini", "GPT-4o Mini", LLMGroup.SMALL, LLMProvider.OPENAI)
     GPT_4O_MINI_TUNED = ("gpt_4o_mini_tuned_v1", "GPT-4o Mini Tuned", LLMGroup.FINE_TUNED, LLMProvider.OPENAI)
-    O1_MINI = ("o1_mini", "o1-mini", LLMGroup.SMALL, LLMProvider.OPENAI)
-    O1_PREVIEW = ("o1_preview", "o1-preview", LLMGroup.LARGE, LLMProvider.OPENAI)
+    O1_MINI = ("o1_mini", "o1-mini", LLMGroup.REASONING, LLMProvider.OPENAI)
+    O1_PREVIEW = ("o1_preview", "o1-preview", LLMGroup.REASONING, LLMProvider.OPENAI)
     CLAUDE_3_5_SONNET = ("claude_3_5_sonnet", "Claude 3.5 Sonnet", LLMGroup.LARGE, LLMProvider.ANTHROPIC)
     CLAUDE_3_OPUS = ("claude_3_opus", "Claude 3 Opus", LLMGroup.LARGE, LLMProvider.ANTHROPIC)
     CLAUDE_3_HAIKU = ("claude_3_haiku", "Claude 3 Haiku", LLMGroup.SMALL, LLMProvider.ANTHROPIC)
