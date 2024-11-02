@@ -26,7 +26,7 @@ def get_sanity_check(df_fallacies: pd.DataFrame) -> pd.DataFrame:
     invalid_predictions: pd.Series = df_fallacies[prediction_cols].isna().sum()
     invalid_predictions.index = invalid_predictions.index.str.removesuffix('_pred')
 
-    types = { 'response_length_mean': 'float64', 'missing_responses': 'int16', 'invalid_predictions': 'int16'}
+    types = {'response_length_mean': 'float64', 'missing_responses': 'int16', 'invalid_predictions': 'int16'}
     return pd.DataFrame([response_lengths, missing_responses, invalid_predictions],
                         index=['response_length_mean', 'missing_responses', 'invalid_predictions'], ).T.astype(types)
 
@@ -41,7 +41,8 @@ def add_identification_scores(df_fallacies: pd.DataFrame):
         score_column = f"{llm.key}_score"
         df_fallacies[pred_column] = df_fallacies.apply(
             lambda row: _get_identification_prediction(row["label"], row[response_column]), axis=1
-        ).astype('UInt8')
+        )
+        df_fallacies[pred_column] = pd.Categorical(df_fallacies[pred_column], categories=[1, 0])
         df_fallacies[score_column] = (
                 ~df_fallacies[pred_column].isna() & (df_fallacies['label'] == df_fallacies[pred_column])
         ).astype('UInt8')
@@ -123,115 +124,121 @@ def add_llm_info(df: pd.DataFrame, label=False, group=False, provider=False):
     add_all = not label and not provider and not group
     llms = {llm.key: llm for llm in LLM}
 
+    # If dataframe has no 'llm' column, add it temporarily from index
+    has_llm_col = 'llm' in df_info.columns
+    if not has_llm_col:
+        df_info['llm'] = df_info.index
+
     if label or add_all:
-        df_info['llm_label'] = df_info.apply(lambda row: llms[row.name].label, axis=1)
+        df_info['llm_label'] = df_info.apply(lambda row: llms[row['llm']].label, axis=1)
     if group or add_all:
-        df_info['llm_group'] = df_info.apply(lambda row: llms[row.name].group.value, axis=1)
+        df_info['llm_group'] = df_info.apply(lambda row: llms[row['llm']].group.value, axis=1)
         df_info['llm_group'] = pd.Categorical(df_info['llm_group'])
     if provider or add_all:
-        df_info['llm_provider'] = df_info.apply(lambda row: llms[row.name].provider.value, axis=1)
+        df_info['llm_provider'] = df_info.apply(lambda row: llms[row['llm']].provider.value, axis=1)
         df_info['llm_provider'] = pd.Categorical(df_info['llm_provider'])
+
+    if not has_llm_col:
+        df_info.drop(columns='llm', inplace=True)
 
     return df_info
 
 
-def get_identification_confusion_metrics(df_fallacies: pd.DataFrame) -> pd.DataFrame:
-    """
-    Returns a multi-index DataFrame with confusion metrics for each LLM and fallacy.
-    """
-    pred_cols = [col for col in df_fallacies.columns if col.endswith('_pred')]
-    llms = {llm.key: llm for llm in LLM}
-    rows = []
-    for pred_col in pred_cols:
-        llm_key = pred_col.replace('_pred', '')
-        for fallacy in get_fallacy_list():
-            df_fallacy = df_fallacies[df_fallacies['fallacy'] == fallacy]
-            metrics = _get_confusion_metrics(df_fallacy, 'label', pred_col)
+def get_confusion_matrices(df_fallacies: pd.DataFrame, actual_col: str) -> pd.DataFrame:
+    """Returns a multi-index DataFrame with n*n confusion matrices for each LLM.
 
-            metrics['llm'] = llm_key
-            metrics['llm_group'] = llms[llm_key].group.value
-            metrics['fallacy'] = fallacy
-            metrics['category'] = df_fallacy['category'].iloc[0]
-            metrics['subcategory'] = df_fallacy['subcategory'].iloc[0]
+    Args:
+        df_fallacies: DataFrame with fallacy predictions
+        actual_col: Column name for the actual labels ('label' for identification, 'fallacy' for classification)
 
-            rows.append(metrics)
-
-    # Create multi-index DataFrame
-    df_result = pd.DataFrame(rows)
-    df_result = df_result.set_index(['llm', 'llm_group', 'category', 'subcategory', 'fallacy'])
-
-    return df_result
-
-
-# noinspection PyUnresolvedReferences
-def _get_confusion_metrics(df: pd.DataFrame, true_col: str, pred_col: str) -> pd.Series:
-    """Calculate basic confusion matrix values"""
-
-    tp = ((df[true_col] == 1) & (df[pred_col] == 1)).sum()
-    tn = ((df[true_col] == 0) & (df[pred_col] == 0)).sum()
-    fp = ((df[true_col] == 0) & (df[pred_col] == 1)).sum()
-    fn = ((df[true_col] == 1) & (df[pred_col] == 0)).sum()
-
-    return pd.Series({
-        'TP': tp,
-        'TN': tn,
-        'FP': fp,
-        'FN': fn,
-    })
-
-def get_confusion_matrix(df_fallacies: pd.DataFrame) -> pd.DataFrame:
-    """
-    Returns a multi-index DataFrame with confusion matrices for each LLM and fallacy.
-    Columns are actual fallacies, rows are predicted fallacies.
+    Returns:
+        Multi-index DataFrame with n*n confusion matrices for each LLM. Columns are actual labels, rows are predicted
+        labels.
     """
     pred_cols = [col for col in df_fallacies.columns if col.endswith('_pred')]
-    llms = {llm.key: llm for llm in LLM}
+    conf_matrices: list[pd.DataFrame] = []
 
-    df_confusion_list = []
     for pred_col in pred_cols:
-        llm_key = pred_col.replace('_pred', '')
+        # Fallacy identification (Yes/No): one confusion matrix per LLM and fallacy
+        if actual_col == 'label':
+            for fallacy in get_fallacy_list():
+                df_conf_matrix = get_crosstab(df_fallacies[df_fallacies['fallacy'] == fallacy], actual_col, pred_col)
+                df_conf_matrix['fallacy'] = fallacy
 
-        # Create confusion matrix for current LLM
-        df_confusion = pd.crosstab(df_fallacies['gpt_4o_pred'], df_fallacies['fallacy'],
-                                   rownames=['predicted'], colnames=['actual'], dropna=False)
+                conf_matrices.append(df_conf_matrix)
 
-        # Drop invalid predictions to get an n*n confusion matrix
-        df_confusion = df_confusion[df_confusion.index.notna()]
+        # Fallacy classification (fallacy type): one confusion matrix per LLM
+        elif actual_col == 'fallacy':
+            df_conf_matrix = get_crosstab(df_fallacies, actual_col, pred_col)
 
-        df_confusion['llm'] = llm_key
-        df_confusion['llm_group'] = llms[llm_key].group.value
+            conf_matrices.append(df_conf_matrix)
 
-        df_confusion_list.append(df_confusion)
+    df_conf_matrices = pd.concat(conf_matrices)
+    df_conf_matrices.index.name = actual_col
+    df_conf_matrices = df_conf_matrices.reset_index()
+
+    df_conf_matrices = add_llm_info(df_conf_matrices, group=True)
+    df_conf_matrices = add_taxonomy(df_conf_matrices)
 
     # Create multi-index DataFrame
-    df_result = pd.concat(df_confusion_list)
-    df_result.index.name = 'fallacy'
-    df_result = df_result.reset_index()
-    add_taxonomy(df_result)
-    df_result = df_result.set_index(['llm', 'llm_group', 'category', 'subcategory', 'fallacy'])
+    multi_index = ['llm', 'llm_group', 'category', 'subcategory']
+    multi_index += ['fallacy'] if actual_col == 'label' else []
+    multi_index += [actual_col]
+    df_conf_matrices = df_conf_matrices.set_index(multi_index)
 
-    return df_result
+    return df_conf_matrices
 
-def sort_confusion_matrix(df_conf_matrix: pd.DataFrame) -> pd.DataFrame:
-    """
-    Sort the confusion matrix by the sum of off-diagonal elements.
-    """
-    # Get off-diagonal sums using numpy
-    off_diag_sums = df_conf_matrix.values.sum(axis=1) - np.diagonal(df_conf_matrix)
-    sorted_idx = pd.Series(off_diag_sums, index=df_conf_matrix.index).sort_values(ascending=True).index
-    return df_conf_matrix.loc[sorted_idx, sorted_idx]
+
+def get_crosstab(df_fallacies: pd.DataFrame, actual_col: str, pred_col: str) -> pd.DataFrame:
+    """Returns a confusion matrix (cross-tabulation) for the given actual and predicted columns."""
+    df_crosstab = pd.crosstab(df_fallacies[pred_col], df_fallacies[actual_col],
+                              rownames=['predicted'], colnames=['actual'], dropna=False)
+
+    # Drop the row containing invalid predictions to get an n*n confusion matrix
+    df_crosstab = df_crosstab[df_crosstab.index.notna()]
+
+    df_crosstab['llm'] = pred_col.replace('_pred', '')
+
+    return df_crosstab
+
+
+def get_identification_confusion_metrics(df_conf_matrices: pd.DataFrame, groupby: list[str]) -> pd.DataFrame:
+    df_metrics = df_conf_matrices.groupby(groupby, observed=True).sum().unstack()
+    df_metrics.columns = df_metrics.columns.to_flat_index()
+    df_metrics.columns = ['TP', 'FN', 'FP', 'TN']
+
+    for index, row in df_metrics.iterrows():
+        accuracy, precision, recall, f1 = get_confusion_scores(row['TP'], row['TN'], row['FP'], row['FN'])
+        mcnemar_p = mcnemar_test(row['FP'], row['FN'])
+
+        df_metrics.loc[index, 'Accuracy'] = accuracy
+        df_metrics.loc[index, 'Precision'] = precision
+        df_metrics.loc[index, 'Recall'] = recall
+        df_metrics.loc[index, 'F1'] = f1
+        df_metrics.loc[index, 'McNemar-P'] = mcnemar_p
+
+    return df_metrics
+
+
+def get_confusion_scores(tp: int, tn: int, fp: int, fn: int) -> tuple[float, float, float, float]:
+    """Calculate accuracy, precision, recall, and F1-score from confusion matrix counts."""
+    accuracy = (tp + tn) / (tp + tn + fp + fn)
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+    return accuracy, precision, recall, f1
 
 
 def get_mispredictions(df_conf_matrix: pd.DataFrame, n_mispredictions: int = 3) -> pd.DataFrame:
-    """
-    Analyze a confusion matrix and return a DataFrame with accuracy and top N mispredictions per label.
+    """Return a DataFrame with accuracy and top N mispredictions per label.
 
     Parameters:
-    df_conf_matrix (pd.DataFrame): Confusion matrix where rows are predictions and columns are true labels
-    n_mispredictions (int): Number of top mispredictions to include per label
+        df_conf_matrix: Confusion matrix where rows are predicted labels and columns are actual labels
+        n_mispredictions: Number of top mispredictions to include per label
 
     Returns:
-    pd.DataFrame: Analysis results with accuracy and top N mispredictions per label
+        DataFrame with accuracy and top N mispredictions per label.
     """
 
     # Generate column names dynamically based on n_mispredictions
@@ -281,29 +288,6 @@ def get_mispredictions(df_conf_matrix: pd.DataFrame, n_mispredictions: int = 3) 
     df_result[count_columns] = df_result[count_columns].astype('UInt16')
 
     return df_result
-
-
-def add_confusion_scores(df_confusion: pd.DataFrame) -> pd.DataFrame:
-    df = df_confusion.copy()
-    for index, row in df.iterrows():
-        accuracy, precision, recall, f1 = get_confusion_scores(row['TP'], row['TN'], row['FP'], row['FN'])
-        mcnemar_p = mcnemar_test(row['FP'], row['FN'])
-        df.loc[index, 'Accuracy'] = accuracy
-        df.loc[index, 'Precision'] = precision
-        df.loc[index, 'Recall'] = recall
-        df.loc[index, 'F1'] = f1
-        df.loc[index, 'McNemar-P'] = mcnemar_p
-
-    return df
-
-
-def get_confusion_scores(tp: int, tn: int, fp: int, fn: int) -> tuple[float, float, float, float]:
-    accuracy = (tp + tn) / (tp + tn + fp + fn)
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-
-    return accuracy, precision, recall, f1
 
 
 def mcnemar_test(fp: int, fn: int) -> float:

@@ -32,7 +32,7 @@ def get_fallacy_df(filename: str, only_incorrect: bool = False) -> pd.DataFrame:
         # Select only incorrect reasoning steps
         df = df[df['label'] == 1]
 
-    df['label'] = pd.Categorical(df['label'])
+    df['label'] = pd.Categorical(df['label'], categories=[1, 0])
     df['fallacy'] = pd.Categorical(df['fallacy'], categories=get_fallacy_list())
     df['category'] = pd.Categorical(df['category'], categories=['formal', 'informal'])
     df['subcategory'] = pd.Categorical(df['subcategory'])

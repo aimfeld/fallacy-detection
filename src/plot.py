@@ -46,8 +46,8 @@ def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
 def plot_identification_confusion_matrix(metrics: pd.Series, title: str, figsize=(6, 5)):
     # Create custom annotation labels
     labels = np.array([
-        [f'TP\n{metrics["TP"]}', f'FP\n{metrics["FP"]}'],
-        [f'FN\n{metrics["FN"]}', f'TN\n{metrics["TN"]}']
+        [f'TP\n{int(metrics["TP"])}', f'FP\n{int(metrics["FP"])}'],
+        [f'FN\n{int(metrics["FN"])}', f'TN\n{int(metrics["TN"])}']
     ])
 
     confusion_matrix = np.array([
