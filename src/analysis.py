@@ -4,6 +4,7 @@ This module contains functions for analyzing the fallacy experiments.
 import pandas as pd
 import numpy as np
 import re
+from typing import Union
 from .llms import LLM
 from .experiment import RESPONSE_ERROR
 from .fallacies import get_fallacy_list, add_taxonomy
@@ -31,56 +32,55 @@ def get_sanity_check(df_fallacies: pd.DataFrame) -> pd.DataFrame:
                         index=['response_length_mean', 'missing_responses', 'invalid_predictions'], ).T.astype(types)
 
 
-def add_identification_scores(df_fallacies: pd.DataFrame):
-    for llm in LLM:
-        response_column = f"{llm.key}_response"
-        if response_column not in df_fallacies.columns:
-            continue
-
-        pred_column = f"{llm.key}_pred"
-        score_column = f"{llm.key}_score"
+def add_identification_scores(df_fallacies: pd.DataFrame, punish_missing: bool = True):
+    response_cols = [col for col in df_fallacies.columns if col.endswith('_response')]
+    for response_col in response_cols:
+        llm_key = response_col.removesuffix('_response')
+        pred_column = f"{llm_key}_pred"
+        score_column = f"{llm_key}_score"
         df_fallacies[pred_column] = df_fallacies.apply(
-            lambda row: _get_identification_prediction(row["label"], row[response_column]), axis=1
+            lambda row: _get_identification_prediction(row["label"], row[response_col]), axis=1
         )
         df_fallacies[pred_column] = pd.Categorical(df_fallacies[pred_column], categories=[1, 0])
-        df_fallacies[score_column] = (
-                ~df_fallacies[pred_column].isna() & (df_fallacies['label'] == df_fallacies[pred_column])
-        ).astype('UInt8')
+        df_fallacies[score_column] = (df_fallacies['label'] == df_fallacies[pred_column]).astype('UInt8')
+
+        if not punish_missing:
+            # Set score to NA if prediction is missing so that it doesn't affect the accuracy
+            df_fallacies.loc[df_fallacies[pred_column].isna(), score_column] = pd.NA
 
 
-def _get_identification_prediction(label: int, response: str) -> int | None:
+def _get_identification_prediction(label: int, response: str) -> Union[int, pd.NA]:
     # The model don't seem to respond in lowercase yes or no. But in chain-of-thought prompt
     # responses, the reasoning sometimes contains the word "no", when the final answer is "Yes".
     contains_yes = bool(re.search(r'\bYes\b', response))
     contains_no = bool(re.search(r'\bNo\b', response))
 
     if contains_yes == contains_no:
-        return None  # Contains neither "Yes" nor "No", or contains both (e.g. "Yes. No. No. Yes. Yes."
+        return pd.NA  # Contains neither "Yes" nor "No", or contains both (e.g. "Yes. No. No. Yes. Yes."
 
     return 0 if contains_yes else 1  # Yes means reasoning step is correct, therefore 0, not a fallacy
 
 
-def add_classification_scores(df_fallacies: pd.DataFrame):
+def add_classification_scores(df_fallacies: pd.DataFrame, punish_missing: bool = True):
     fallacies = get_fallacy_list()
-    for llm in LLM:
-        response_column = f"{llm.key}_response"
-        if response_column not in df_fallacies.columns:
-            continue
-
-        pred_column = f"{llm.key}_pred"
-        score_column = f"{llm.key}_score"
+    response_cols = [col for col in df_fallacies.columns if col.endswith('_response')]
+    for response_col in response_cols:
+        llm_key = response_col.removesuffix('_response')
+        pred_column = f"{llm_key}_pred"
+        score_column = f"{llm_key}_score"
         df_fallacies[pred_column] = df_fallacies.apply(
-            lambda row: _get_classification_prediction(fallacies, row[response_column]), axis=1
+            lambda row: _get_classification_prediction(fallacies, row[response_col]), axis=1
         )
         df_fallacies[pred_column] = pd.Categorical(df_fallacies[pred_column], categories=fallacies)
-        df_fallacies[score_column] = (
-                ~df_fallacies[pred_column].isna() & (df_fallacies['fallacy'] == df_fallacies[pred_column])
-        ).astype('UInt8')
+        df_fallacies[score_column] = (df_fallacies['fallacy'] == df_fallacies[pred_column]).astype('UInt8')
 
+        if not punish_missing:
+            # Set score to NA if prediction is missing so that it doesn't affect the accuracy
+            df_fallacies.loc[df_fallacies[pred_column].isna(), score_column] = pd.NA
 
-def _get_classification_prediction(fallacies: list[str], response: str) -> str | None:
+def _get_classification_prediction(fallacies: list[str], response: str) -> Union[str, pd.NA]:
     if response == '' or response == RESPONSE_ERROR:
-        return None
+        return pd.NA
 
     for fallacy in fallacies:
         if bool(re.search(fallacy, response, re.IGNORECASE)):
