@@ -18,6 +18,7 @@ class LLMProvider(Enum):
     GOOGLE = "Google"
     META = "Meta"
     MISTRAL_AI = "Mistral AI"
+    NONE = "None"
 
 
 class LLMGroup(Enum):
@@ -25,7 +26,7 @@ class LLMGroup(Enum):
     SMALL = "small" # SLMs: 500M - 20B parameters
     FINE_TUNED = "fine-tuned"
     REASONING = "reasoning" # Models with internal reasoning capabilities
-
+    HUMAN = "human" # Human reasoning
 
 class LLM(Enum):
     GPT_4 = ("gpt_4", "GPT-4", LLMGroup.LARGE, LLMProvider.OPENAI)
@@ -45,6 +46,9 @@ class LLM(Enum):
     LLAMA_3_1_8B = ("llama_3_1_8b", "Llama 3.1 8B", LLMGroup.SMALL, LLMProvider.META)
     MISTRAL_LARGE_2 = ("mistral_large_2", "Mistral Large", LLMGroup.LARGE, LLMProvider.MISTRAL_AI) # 123B
     MISTRAL_SMALL_2 = ("mistral_small_2", "Mistral Small", LLMGroup.SMALL, LLMProvider.MISTRAL_AI) # 22B
+
+    # Human
+    ADRIAN = ("adrian", "Adrian", LLMGroup.HUMAN, LLMProvider.NONE)
 
     def __init__(self, key: str, label: str, group: LLMGroup, provider: LLMProvider):
         self._key = key
