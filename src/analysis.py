@@ -105,14 +105,14 @@ def get_macro_accuracies(df_fallacies: pd.DataFrame):
     df_type_accuracies = df_scores.groupby(['category', 'subcategory', 'fallacy'], observed=True).mean() * 100
     df_subcategory_accuracies = df_type_accuracies.groupby(['category', 'subcategory'], observed=True).mean()
     df_category_accuracies = df_subcategory_accuracies.groupby(['category'], observed=True).mean()
-    df_global_accuracies = df_category_accuracies.mean().to_frame().T
-    df_global_accuracies.index = ['accuracy']
+    df_overall_accuracies = df_category_accuracies.mean().to_frame().T
+    df_overall_accuracies.index = ['accuracy']
 
     return (
         df_type_accuracies.T,
         df_subcategory_accuracies.T,
         df_category_accuracies.T,
-        df_global_accuracies.T
+        df_overall_accuracies.T
     )
 
 
@@ -124,7 +124,7 @@ def add_llm_info(df: pd.DataFrame, label=False, group=False, provider=False):
     add_all = not label and not provider and not group
     llms = {llm.key: llm for llm in LLM}
 
-    # If dataframe has no 'llm' column, add it temporarily from index
+    # If dataframe has no 'llm' column, add it temporarily from index, assuming index is llm key
     has_llm_col = 'llm' in df_info.columns
     if not has_llm_col:
         df_info['llm'] = df_info.index
@@ -202,8 +202,8 @@ def get_crosstab(df_fallacies: pd.DataFrame, actual_col: str, pred_col: str) -> 
     return df_crosstab
 
 
-def get_identification_confusion_metrics(df_conf_matrices: pd.DataFrame, groupby: list[str]) -> pd.DataFrame:
-    df_metrics = df_conf_matrices.groupby(groupby, observed=True).sum().unstack()
+def get_identification_confusion_metrics(df_confusion_matrices: pd.DataFrame, groupby: list[str]) -> pd.DataFrame:
+    df_metrics = df_confusion_matrices.groupby(groupby, observed=True).sum().unstack()
     df_metrics.columns = df_metrics.columns.to_flat_index()
     df_metrics.columns = ['TP', 'FN', 'FP', 'TN']
 
@@ -230,61 +230,61 @@ def get_confusion_scores(tp: int, tn: int, fp: int, fn: int) -> tuple[float, flo
     return accuracy, precision, recall, f1
 
 
-def get_mispredictions(df_conf_matrix: pd.DataFrame, n_mispredictions: int = 3) -> pd.DataFrame:
-    """Return a DataFrame with accuracy and top N mispredictions per label.
+def get_misclassifications(df_confusion_matrix: pd.DataFrame, n_misclassifications: int = 3) -> pd.DataFrame:
+    """Return a DataFrame with accuracy and top N misclassifications per label.
 
     Parameters:
-        df_conf_matrix: Confusion matrix where rows are predicted labels and columns are actual labels
-        n_mispredictions: Number of top mispredictions to include per label
+        df_confusion_matrix: Confusion matrix where rows are predicted labels and columns are actual labels
+        n_misclassifications: Number of top misclassifications to include per label
 
     Returns:
-        DataFrame with accuracy and top N mispredictions per label.
+        DataFrame with accuracy and top N misclassifications per label.
     """
 
-    # Generate column names dynamically based on n_mispredictions
+    # Generate column names dynamically based on n_misclassifications
     result_columns = ['accuracy']
-    for i in range(1, n_mispredictions + 1):
-        result_columns.extend([f'misprediction_{i}', f'count_{i}'])
+    for i in range(1, n_misclassifications + 1):
+        result_columns.extend([f'misclassification_{i}', f'count_{i}'])
 
     # Initialize the result DataFrame
-    df_result = pd.DataFrame(index=df_conf_matrix.columns, columns=result_columns)
+    df_result = pd.DataFrame(index=df_confusion_matrix.columns, columns=result_columns)
 
     # Process each true label (column)
-    for true_label in df_conf_matrix.columns:
+    for true_label in df_confusion_matrix.columns:
         # Get the column for this true label
-        col = df_conf_matrix[true_label]
+        col = df_confusion_matrix[true_label]
 
         # Calculate accuracy
         total = col.sum()
         correct = col[true_label]
         accuracy = correct / total if total > 0 else 0
 
-        # Get mispredictions (exclude the correct prediction)
-        mispredictions = col[col.index != true_label]
+        # Get misclassifications (exclude the correct prediction)
+        misclassifications = col[col.index != true_label]
 
-        # Sort mispredictions in descending order and get top n
-        top_n_mispredictions = mispredictions[mispredictions > 0].sort_values(ascending=False).head(n_mispredictions)
+        # Sort misclassifications in descending order and get top n
+        top_n_misclassifications = misclassifications[misclassifications > 0].sort_values(ascending=False).head(n_misclassifications)
 
         # Fill the result row
         df_result.at[true_label, 'accuracy'] = accuracy
 
-        # Fill misprediction information
-        for i in range(1, n_mispredictions + 1):
-            if i <= len(top_n_mispredictions):
-                label = top_n_mispredictions.index[i - 1]
-                count = top_n_mispredictions.iloc[i - 1]
+        # Fill misclassification information
+        for i in range(1, n_misclassifications + 1):
+            if i <= len(top_n_misclassifications):
+                label = top_n_misclassifications.index[i - 1]
+                count = top_n_misclassifications.iloc[i - 1]
             else:
                 label = ''
                 count = pd.NA
 
-            df_result.at[true_label, f'misprediction_{i}'] = label
+            df_result.at[true_label, f'misclassification_{i}'] = label
             df_result.at[true_label, f'count_{i}'] = count
 
     df_result.sort_values(by=['accuracy', 'count_1'], ascending=[True, False], inplace=True)
 
     # Convert accuracy to float and counts to int
     df_result['accuracy'] = df_result['accuracy'].astype(float)
-    count_columns = [f'count_{i}' for i in range(1, n_mispredictions + 1)]
+    count_columns = [f'count_{i}' for i in range(1, n_misclassifications + 1)]
     df_result[count_columns] = df_result[count_columns].astype('UInt16')
 
     return df_result

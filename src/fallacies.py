@@ -33,6 +33,11 @@ def add_taxonomy(df: pd.DataFrame) -> pd.DataFrame:
     with open('fallacies/fallacy_taxonomy.json') as f:
         taxonomy = json.load(f)
 
+    # If dataframe has no 'fallacy' column, add it temporarily from index, assuming index is the fallacy
+    has_fallacy_col = 'llm' in df.columns
+    if not has_fallacy_col:
+        df['fallacy'] = df.index
+
     df['category'] = df.apply(lambda row: 'formal' if row['fallacy'] in taxonomy['formal'] else 'informal', axis=1)
 
     subcategory_map = {}
@@ -43,5 +48,8 @@ def add_taxonomy(df: pd.DataFrame) -> pd.DataFrame:
             subcategory_map[fallacy] = subcategory
 
     df['subcategory'] = df.apply(lambda row: subcategory_map[row['fallacy']], axis=1)
+
+    if not has_fallacy_col:
+        df.drop(columns='fallacy', inplace=True)
 
     return df
