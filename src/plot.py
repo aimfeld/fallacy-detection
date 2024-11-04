@@ -5,7 +5,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from .analysis import get_confusion_scores, mcnemar_test
 
 DPI = 600 # Quality of saved .png
 
@@ -46,13 +45,13 @@ def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
 def plot_identification_confusion_matrix(metrics: pd.Series, title: str, figsize=(6, 5)):
     # Create custom annotation labels
     labels = np.array([
-        [f'TP\n{int(metrics["TP"])}', f'FP\n{int(metrics["FP"])}'],
-        [f'FN\n{int(metrics["FN"])}', f'TN\n{int(metrics["TN"])}']
+        [f'TP\n{int(metrics["tp"])}', f'FP\n{int(metrics["fp"])}'],
+        [f'FN\n{int(metrics["fn"])}', f'TN\n{int(metrics["tn"])}']
     ])
 
     confusion_matrix = np.array([
-        [metrics['TP'], metrics['FP']],
-        [metrics['FN'], metrics['TN']]
+        [metrics['tp'], metrics['fp']],
+        [metrics['fn'], metrics['tn']]
     ])
 
     # Create figure and axes
@@ -76,9 +75,13 @@ def plot_identification_confusion_matrix(metrics: pd.Series, title: str, figsize
     plt.ylabel('Predicted', labelpad=10)
 
     # Add metrics text box
-    accuracy, precision, recall, f1 = get_confusion_scores(metrics['TP'], metrics['TN'], metrics['FP'], metrics['FN'])
-    mcnemar_p = mcnemar_test(metrics['FP'], metrics['FN'])
-    metrics_text = f"Accuracy: {accuracy:.3f}\nPrecision: {precision:.3f}\nRecall: {recall:.3f}\nF1-Score: {f1:.3f}\nMcNemar-P: {mcnemar_p:.3f}"
+    metrics_text = (
+        f"Accuracy: {metrics['accuracy']:.3f}\n"
+        f"Precision: {metrics['precision']:.3f}\n"
+        f"Recall: {metrics['recall']:.3f}\n"
+        f"F1-Score: {metrics['f1']:.3f}\n"
+        f"P-McNemar: {metrics['p_mcnemar']:.3f}"
+    )
     plt.text(2.1, 0.6, metrics_text, fontsize=10)
 
     plt.tight_layout()

@@ -78,6 +78,7 @@ def add_classification_scores(df_fallacies: pd.DataFrame, punish_missing: bool =
             # Set score to NA if prediction is missing so that it doesn't affect the accuracy
             df_fallacies.loc[df_fallacies[pred_column].isna(), score_column] = pd.NA
 
+
 def _get_classification_prediction(fallacies: list[str], response: str) -> Union[str, pd.NA]:
     if response == '' or response == RESPONSE_ERROR:
         return pd.NA
@@ -162,14 +163,15 @@ def get_confusion_matrices(df_fallacies: pd.DataFrame, actual_col: str) -> pd.Da
         # Fallacy identification (Yes/No): one confusion matrix per LLM and fallacy
         if actual_col == 'label':
             for fallacy in get_fallacy_list():
-                df_confusion_matrix = get_crosstab(df_fallacies[df_fallacies['fallacy'] == fallacy], actual_col, pred_col)
+                df_confusion_matrix = _get_crosstab(df_fallacies[df_fallacies['fallacy'] == fallacy], actual_col,
+                                                    pred_col)
                 df_confusion_matrix['fallacy'] = fallacy
 
                 confusion_matrices.append(df_confusion_matrix)
 
         # Fallacy classification (fallacy type): one confusion matrix per LLM
         elif actual_col == 'fallacy':
-            df_confusion_matrix = get_crosstab(df_fallacies, actual_col, pred_col)
+            df_confusion_matrix = _get_crosstab(df_fallacies, actual_col, pred_col)
 
             confusion_matrices.append(df_confusion_matrix)
 
@@ -189,7 +191,7 @@ def get_confusion_matrices(df_fallacies: pd.DataFrame, actual_col: str) -> pd.Da
     return df_confusion_matrices
 
 
-def get_crosstab(df_fallacies: pd.DataFrame, actual_col: str, pred_col: str) -> pd.DataFrame:
+def _get_crosstab(df_fallacies: pd.DataFrame, actual_col: str, pred_col: str) -> pd.DataFrame:
     """Returns a confusion matrix (cross-tabulation) for the given actual and predicted columns."""
     df_crosstab = pd.crosstab(df_fallacies[pred_col], df_fallacies[actual_col],
                               rownames=['predicted'], colnames=['actual'], dropna=False)
@@ -202,34 +204,59 @@ def get_crosstab(df_fallacies: pd.DataFrame, actual_col: str, pred_col: str) -> 
     return df_crosstab
 
 
-def get_identification_confusion_metrics(df_confusion_matrices: pd.DataFrame, groupby: list[str]) -> pd.DataFrame:
-    df_metrics = df_confusion_matrices.groupby(groupby, observed=True).sum().unstack()
-    if isinstance(df_metrics, pd.Series):
-        df_metrics = df_metrics.to_frame().T
-    df_metrics.columns = df_metrics.columns.to_flat_index()
-    df_metrics.columns = ['TP', 'FN', 'FP', 'TN']
+def get_confusion_metrics(df_confusion_matrix: pd.DataFrame) -> pd.DataFrame:
+    """Calculate confusion matrix metrics for each label"""
+    # Get diagonal elements (true positives)
+    true_positives = np.diag(df_confusion_matrix)
 
-    for index, row in df_metrics.iterrows():
-        accuracy, precision, recall, f1 = get_confusion_scores(row['TP'], row['TN'], row['FP'], row['FN'])
-        mcnemar_p = mcnemar_test(row['FP'], row['FN'])
+    # Calculate total samples
+    total_samples = df_confusion_matrix.sum().sum()
 
-        df_metrics.loc[index, 'Accuracy'] = accuracy
-        df_metrics.loc[index, 'Precision'] = precision
-        df_metrics.loc[index, 'Recall'] = recall
-        df_metrics.loc[index, 'F1'] = f1
-        df_metrics.loc[index, 'McNemar-P'] = mcnemar_p
+    # False positives and false negatives
+    false_positives = df_confusion_matrix.sum(axis=1) - true_positives
+    false_negatives = df_confusion_matrix.sum(axis=0) - true_positives
 
-    return df_metrics
+    # True negatives (sum of all correct predictions for other classes)
+    true_negatives = total_samples - (true_positives + false_positives + false_negatives)
+
+    # Calculate metrics
+    accuracy = (true_positives + true_negatives) / total_samples
+    precision = true_positives / (true_positives + false_positives)
+    recall = true_positives / (true_positives + false_negatives)
+    f1_score = 2 * (precision * recall) / (precision + recall)
+    p_mcnemar = [mcnemar_test(fp, fn) for fp, fn in zip(false_positives, false_negatives)]
+
+    df_results = pd.DataFrame({
+        'tp': true_positives,
+        'tn': true_negatives,
+        'fp': false_positives,
+        'fn': false_negatives,
+        'accuracy': accuracy,
+        'precision': precision,
+        'recall': recall,
+        'f1': f1_score,
+        'p_mcnemar': p_mcnemar
+    })
+
+    # Division by zero results in NaN values which are replaced by 0
+    df_results.fillna(0, inplace=True)
+
+    return df_results
 
 
-def get_confusion_scores(tp: int, tn: int, fp: int, fn: int) -> tuple[float, float, float, float]:
-    """Calculate accuracy, precision, recall, and F1-score from confusion matrix counts."""
-    accuracy = (tp + tn) / (tp + tn + fp + fn)
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+def get_identification_confusion_metrics(df_confusion_matrices: pd.DataFrame, index_name: str) -> pd.DataFrame:
+    """Calculate confusion metrics for each index_name level."""
+    df_agg = df_confusion_matrices.groupby([index_name, 'label'], observed=True).sum()
 
-    return accuracy, precision, recall, f1
+    # We care about the metrics for label 1 (fallacy) only
+    confusion_metrics = {llm: get_confusion_metrics(cm.loc[llm]).loc[1] for llm, cm in
+                         df_agg.groupby(index_name, observed=True)}
+    df_confusion_metrics = pd.DataFrame(confusion_metrics).T
+
+    for col in ['tp', 'tn', 'fp', 'fn']:
+        df_confusion_metrics[col] = df_confusion_metrics[col].astype('UInt16')
+
+    return df_confusion_metrics
 
 
 def get_misclassifications(df_confusion_matrix: pd.DataFrame, n_misclassifications: int = 3) -> pd.DataFrame:
@@ -265,7 +292,8 @@ def get_misclassifications(df_confusion_matrix: pd.DataFrame, n_misclassificatio
         misclassifications = col[col.index != true_label]
 
         # Sort misclassifications in descending order and get top n
-        top_n_misclassifications = misclassifications[misclassifications > 0].sort_values(ascending=False).head(n_misclassifications)
+        top_n_misclassifications = misclassifications[misclassifications > 0].sort_values(ascending=False).head(
+            n_misclassifications)
 
         # Fill the result row
         df_result.at[true_label, 'accuracy'] = accuracy
@@ -292,7 +320,7 @@ def get_misclassifications(df_confusion_matrix: pd.DataFrame, n_misclassificatio
     return df_result
 
 
-def mcnemar_test(fp: int, fn: int) -> float:
+def mcnemar_test(false_positives: int, false_negatives: int) -> float:
     """
     Test whether the false positives (FP) and false negatives (FN) are significantly different using McNemar's test.
     McNemar's test is the most appropriate choice because:
@@ -301,8 +329,8 @@ def mcnemar_test(fp: int, fn: int) -> float:
     """
     # Create the contingency table for McNemar's test
     # Note: Only the off-diagonal elements (FP and FN) are used
-    contingency_table = np.array([[0, fp],
-                                  [fn, 0]])
+    contingency_table = np.array([[0, false_positives],
+                                  [false_negatives, 0]])
 
     # Perform McNemar's test
     return mcnemar(contingency_table).pvalue
