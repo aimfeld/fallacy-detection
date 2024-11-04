@@ -204,6 +204,8 @@ def get_crosstab(df_fallacies: pd.DataFrame, actual_col: str, pred_col: str) -> 
 
 def get_identification_confusion_metrics(df_confusion_matrices: pd.DataFrame, groupby: list[str]) -> pd.DataFrame:
     df_metrics = df_confusion_matrices.groupby(groupby, observed=True).sum().unstack()
+    if isinstance(df_metrics, pd.Series):
+        df_metrics = df_metrics.to_frame().T
     df_metrics.columns = df_metrics.columns.to_flat_index()
     df_metrics.columns = ['TP', 'FN', 'FP', 'TN']
 
