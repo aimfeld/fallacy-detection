@@ -156,37 +156,37 @@ def get_confusion_matrices(df_fallacies: pd.DataFrame, actual_col: str) -> pd.Da
         labels.
     """
     pred_cols = [col for col in df_fallacies.columns if col.endswith('_pred')]
-    conf_matrices: list[pd.DataFrame] = []
+    confusion_matrices: list[pd.DataFrame] = []
 
     for pred_col in pred_cols:
         # Fallacy identification (Yes/No): one confusion matrix per LLM and fallacy
         if actual_col == 'label':
             for fallacy in get_fallacy_list():
-                df_conf_matrix = get_crosstab(df_fallacies[df_fallacies['fallacy'] == fallacy], actual_col, pred_col)
-                df_conf_matrix['fallacy'] = fallacy
+                df_confusion_matrix = get_crosstab(df_fallacies[df_fallacies['fallacy'] == fallacy], actual_col, pred_col)
+                df_confusion_matrix['fallacy'] = fallacy
 
-                conf_matrices.append(df_conf_matrix)
+                confusion_matrices.append(df_confusion_matrix)
 
         # Fallacy classification (fallacy type): one confusion matrix per LLM
         elif actual_col == 'fallacy':
-            df_conf_matrix = get_crosstab(df_fallacies, actual_col, pred_col)
+            df_confusion_matrix = get_crosstab(df_fallacies, actual_col, pred_col)
 
-            conf_matrices.append(df_conf_matrix)
+            confusion_matrices.append(df_confusion_matrix)
 
-    df_conf_matrices = pd.concat(conf_matrices)
-    df_conf_matrices.index.name = actual_col
-    df_conf_matrices = df_conf_matrices.reset_index()
+    df_confusion_matrices = pd.concat(confusion_matrices)
+    df_confusion_matrices.index.name = actual_col
+    df_confusion_matrices = df_confusion_matrices.reset_index()
 
-    df_conf_matrices = add_llm_info(df_conf_matrices, group=True)
-    df_conf_matrices = add_taxonomy(df_conf_matrices)
+    df_confusion_matrices = add_llm_info(df_confusion_matrices, group=True)
+    df_confusion_matrices = add_taxonomy(df_confusion_matrices)
 
     # Create multi-index DataFrame
     multi_index = ['llm', 'llm_group', 'category', 'subcategory']
     multi_index += ['fallacy'] if actual_col == 'label' else []
     multi_index += [actual_col]
-    df_conf_matrices = df_conf_matrices.set_index(multi_index)
+    df_confusion_matrices = df_confusion_matrices.set_index(multi_index)
 
-    return df_conf_matrices
+    return df_confusion_matrices
 
 
 def get_crosstab(df_fallacies: pd.DataFrame, actual_col: str, pred_col: str) -> pd.DataFrame:
