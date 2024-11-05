@@ -17,13 +17,19 @@ def plot_accuracies(data: pd.DataFrame, figsize: tuple, title: str,
     """
     Plot horizontal bar plot of accuracies
     """
-    df = data.copy()
+    df = data.copy().reset_index()
     if 'subcategory' in df.columns:
         df['subcategory'] = df['subcategory'].cat.remove_unused_categories() # Don't show unused subcategories in the plot
 
+    # Get rid of unused categories, but maintain color consistency
+    if order is None and df[y].dtype.name == 'category':
+        order = [cat for cat in df[y].cat.categories if cat in df[y].unique()]
+    if hue_order is None and df[hue].dtype.name == 'category':
+        hue_order = [cat if cat in df[hue].unique() else None for cat in df[hue].cat.categories]
+
     _, ax = plt.subplots(figsize=figsize)
     # reset_index() prevents reindexing error when there are duplicate indices
-    sns.barplot(x='accuracy', y=y, data=df.reset_index(), hue=hue, order=order, hue_order=hue_order, ax=ax)
+    sns.barplot(x='accuracy', y=y, data=df, hue=hue, order=order, hue_order=hue_order, ax=ax)
     plt.title(title)
     plt.xlabel('Accuracy (%)')
     plt.ylabel(y_label)
