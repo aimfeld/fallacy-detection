@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import re
 from typing import Union
-from .llms import LLM
+from .llms import LLM, LLMGroup, LLMProvider
 from .experiment import RESPONSE_ERROR
 from .fallacies import get_fallacy_list, add_taxonomy
 from statsmodels.stats.contingency_tables import mcnemar
@@ -133,11 +133,13 @@ def add_llm_info(df: pd.DataFrame, label=False, group=False, provider=False):
     if label or add_all:
         df_info['llm_label'] = df_info.apply(lambda row: llms[row['llm']].label, axis=1)
     if group or add_all:
+        categories = [group.value for group in LLMGroup]
         df_info['llm_group'] = df_info.apply(lambda row: llms[row['llm']].group.value, axis=1)
-        df_info['llm_group'] = pd.Categorical(df_info['llm_group'])
+        df_info['llm_group'] = pd.Categorical(df_info['llm_group'], categories=categories, ordered=True)
     if provider or add_all:
+        categories = [provider.value for provider in LLMProvider]
         df_info['llm_provider'] = df_info.apply(lambda row: llms[row['llm']].provider.value, axis=1)
-        df_info['llm_provider'] = pd.Categorical(df_info['llm_provider'])
+        df_info['llm_provider'] = pd.Categorical(df_info['llm_provider'], categories=categories, ordered=True)
 
     if not has_llm_col:
         df_info.drop(columns='llm', inplace=True)
