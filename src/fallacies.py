@@ -34,7 +34,7 @@ def add_taxonomy(df: pd.DataFrame) -> pd.DataFrame:
         taxonomy = json.load(f)
 
     # If dataframe has no 'fallacy' column, add it temporarily from index, assuming index is the fallacy
-    has_fallacy_col = 'llm' in df.columns
+    has_fallacy_col = 'fallacy' in df.columns
     if not has_fallacy_col:
         df['fallacy'] = df.index
 
