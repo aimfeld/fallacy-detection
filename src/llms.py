@@ -24,8 +24,8 @@ class LLMProvider(Enum):
 class LLMGroup(Enum):
     LARGE = "large" # LLMs: >20B parameters
     SMALL = "small" # SLMs: 500M - 20B parameters
-    FINE_TUNED = "fine-tuned"
     REASONING = "reasoning" # Models with internal reasoning capabilities
+    FINE_TUNED = "fine-tuned"
     HUMAN = "human" # Human reasoning
 
 class LLM(Enum):
@@ -128,7 +128,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
     if LLM.GPT_4O_MINI_IDENTIFICATION in llm_names:
         llms[LLM.GPT_4O_MINI_IDENTIFICATION] = ChatOpenAI(
             openai_api_key=os.getenv("OPENAI_API_KEY"),
-            model="ft:gpt-4o-mini-2024-07-18:personal:fallacy-identification-v1:AQFmP2O0" ,
+            model="ft:gpt-4o-mini-2024-07-18:personal:fallacy-identification-v2:AQH3aRxC",
             temperature=0,
             timeout=3.0,
             max_retries=2,
