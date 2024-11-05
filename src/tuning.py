@@ -24,11 +24,13 @@ def tuning_train_test_split(df_fallacies: pd.DataFrame, groupby: list[str], n_tr
     df_fallacies.drop(columns=['cumcount'], inplace=True)
 
 
-def get_tuning_examples(df_fallacies: pd.DataFrame, prompt_template: str, system_prompt: str, tuning_set: TuningSet) -> list[dict]:
+def get_tuning_examples(df_fallacies: pd.DataFrame, prompt_template: str, system_prompt: str, label_col: str, tuning_set: TuningSet) -> list[dict]:
     """
     Get the OpenAI training data for fine-tuning
     https://platform.openai.com/docs/guides/fine-tuning/preparing-your-dataset
     """
+    assert label_col in ['label', 'fallacy'], "label_col must be 'label' or 'fallacy'"
+
     df = df_fallacies[df_fallacies['tuning'] == tuning_set.value]
     examples: list[dict] = []
     for _, row in df.iterrows():
@@ -45,7 +47,7 @@ def get_tuning_examples(df_fallacies: pd.DataFrame, prompt_template: str, system
                 },
                 {
                     'role': 'assistant',
-                    'content': row['fallacy']
+                    'content': ('Yes' if row['label'] == 0 else 'No') if label_col == 'label' else row['fallacy']
                 }
             ]
         }
