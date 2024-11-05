@@ -1,4 +1,4 @@
-step,entity,fallacy,label,category,subcategory,tuning,gpt_4o_mini_tuned_v1_response
+step,entity,fallacy,label,category,subcategory,tuning,gpt_4o_mini_classification_response
 "Since Tim asked John if he had seen his boonk and John remained silent, therefore, John must have taken the boonk.",boonk,Argument from Silence,1,informal,insufficiency,test,Argument from Silence
 "Since I asked if wheelbirds can fly and you didn't respond, therefore, wheelbirds can indeed fly.",wheelbirds,Argument from Silence,1,informal,insufficiency,test,Argument from Silence
 "Since Farmer Joe claims there are troughs in the barn and Others remain silent when asked for proof, therefore, there must be troughs in the barn.",troughs,Argument from Silence,1,informal,insufficiency,test,Argument from Silence
