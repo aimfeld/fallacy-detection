@@ -12,19 +12,19 @@ class TuningSet(Enum):
     VALIDATION = 'validation'  # Validation set to check progress during training
     TEST = 'test'  # Test set to evaluate the model
 
-def tuning_train_test_split(df_fallacies: pd.DataFrame, n_train: int, n_validation: int):
+def tuning_train_test_split(df_fallacies: pd.DataFrame, groupby: list[str], n_train: int, n_validation: int):
     """
     Split the fallacies into train, validation, and test sets for fine-tuning
     """
     df_fallacies['tuning'] = TuningSet.TEST.value
-    df_fallacies['cumcount'] = df_fallacies.groupby('fallacy').cumcount()
+    df_fallacies['cumcount'] = df_fallacies.groupby(groupby, observed=True).cumcount()
     df_fallacies.loc[df_fallacies['cumcount'] < n_train, 'tuning'] = TuningSet.TRAIN.value
     df_fallacies.loc[(df_fallacies['cumcount'] >= n_train) &
                      (df_fallacies['cumcount'] < n_train + n_validation), 'tuning'] = TuningSet.VALIDATION.value
     df_fallacies.drop(columns=['cumcount'], inplace=True)
 
 
-def get_tuning_examples(df_fallacies: pd.DataFrame, prompt_template: str, tuning_set: TuningSet) -> list[dict]:
+def get_tuning_examples(df_fallacies: pd.DataFrame, prompt_template: str, system_prompt: str, tuning_set: TuningSet) -> list[dict]:
     """
     Get the OpenAI training data for fine-tuning
     https://platform.openai.com/docs/guides/fine-tuning/preparing-your-dataset
@@ -37,7 +37,7 @@ def get_tuning_examples(df_fallacies: pd.DataFrame, prompt_template: str, tuning
             'messages': [
                 {
                     'role': 'system',
-                    'content': 'You are a logical fallacy classifier. Given an incorrect reasoning step, your task is to identify its type of fallacy.'
+                    'content': system_prompt
                 },
                 {
                     'role': 'user',
