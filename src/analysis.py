@@ -275,9 +275,9 @@ def get_misclassifications(df_confusion_matrix: pd.DataFrame, n_misclassificatio
     """
 
     # Generate column names dynamically based on n_misclassifications
-    result_columns = ['accuracy']
-    for i in range(1, n_misclassifications + 1):
-        result_columns.extend([f'misclassification_{i}', f'count_{i}'])
+    result_columns = []
+    for i in range(0, n_misclassifications):
+        result_columns.extend([f'misclassification_{i + 1}', f'count_{i + 1}'])
 
     # Initialize the result DataFrame
     df_result = pd.DataFrame(index=df_confusion_matrix.columns, columns=result_columns)
@@ -287,39 +287,21 @@ def get_misclassifications(df_confusion_matrix: pd.DataFrame, n_misclassificatio
         # Get the column for this true label
         col = df_confusion_matrix[true_label]
 
-        # Calculate accuracy
-        total = col.sum()
-        correct = col[true_label]
-        accuracy = correct / total if total > 0 else 0
-
         # Get misclassifications (exclude the correct prediction)
         misclassifications = col[col.index != true_label]
 
         # Sort misclassifications in descending order and get top n
-        top_n_misclassifications = misclassifications[misclassifications > 0].sort_values(ascending=False).head(
-            n_misclassifications)
-
-        # Fill the result row
-        df_result.at[true_label, 'accuracy'] = accuracy
+        top_n_misclassifications = misclassifications.sort_values(ascending=False).head(n_misclassifications)
 
         # Fill misclassification information
-        for i in range(1, n_misclassifications + 1):
-            if i <= len(top_n_misclassifications):
-                label = top_n_misclassifications.index[i - 1]
-                count = top_n_misclassifications.iloc[i - 1]
-            else:
-                label = ''
-                count = pd.NA
+        for i in range(0, n_misclassifications):
+            count = top_n_misclassifications.iloc[i]
+            label = top_n_misclassifications.index[i] if count > 0 else ''
 
-            df_result.at[true_label, f'misclassification_{i}'] = label
-            df_result.at[true_label, f'count_{i}'] = count
+            df_result.at[true_label, f'misclassification_{i + 1}'] = label
+            df_result.at[true_label, f'count_{i + 1}'] = count
 
-    df_result.sort_values(by=['accuracy', 'count_1'], ascending=[True, False], inplace=True)
-
-    # Convert accuracy to float and counts to int
-    df_result['accuracy'] = df_result['accuracy'].astype(float)
-    count_columns = [f'count_{i}' for i in range(1, n_misclassifications + 1)]
-    df_result[count_columns] = df_result[count_columns].astype('UInt16')
+    df_result.sort_values(by='count_1', ascending=False, inplace=True)
 
     return df_result
 
