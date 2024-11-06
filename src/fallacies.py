@@ -6,7 +6,7 @@ import json
 
 
 def create_fallacy_df() -> pd.DataFrame:
-    df = pd.read_json('fallacies/step_fallacy.test.jsonl', lines=True)
+    df = pd.read_json('datasets/FALLACIES/step_fallacy.test.jsonl', lines=True)
     df = add_taxonomy(df)
 
     df['step'] = df['step'].apply(_remove_square_brackets)
@@ -15,7 +15,7 @@ def create_fallacy_df() -> pd.DataFrame:
 
 
 def get_fallacy_list() -> list[str]:
-    with open('fallacies/fallacy_taxonomy.json') as f:
+    with open('datasets/FALLACIES/fallacy_taxonomy.json') as f:
         taxonomy = json.load(f)
 
     return taxonomy['all']
@@ -30,7 +30,7 @@ def add_taxonomy(df: pd.DataFrame) -> pd.DataFrame:
     Add columns for the fallacy category and subcategory to the dataframe.
     """
     df = df.copy()
-    with open('fallacies/fallacy_taxonomy.json') as f:
+    with open('datasets/FALLACIES/fallacy_taxonomy.json') as f:
         taxonomy = json.load(f)
 
     # If dataframe has no 'fallacy' column, add it temporarily from index, assuming index is the fallacy
