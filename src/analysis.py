@@ -158,6 +158,8 @@ def get_confusion_matrices(df_fallacies: pd.DataFrame, actual_col: str) -> pd.Da
         Multi-index DataFrame with n*n confusion matrices for each LLM. Columns are actual labels, rows are predicted
         labels.
     """
+    assert actual_col in ['label', 'fallacy'], "actual_col must be 'label' or 'fallacy'"
+
     pred_cols = [col for col in df_fallacies.columns if col.endswith('_pred')]
     confusion_matrices: list[pd.DataFrame] = []
 
