@@ -3,4 +3,5 @@
 test.ipynb
 Chat_finetuning_data_prep.ipynb
 fallacies/fallacies-reformat.json
+data/fallacies_e1_human_empty.csv
 plot
