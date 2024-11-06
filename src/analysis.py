@@ -33,6 +33,14 @@ def get_sanity_check(df_fallacies: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_identification_scores(df_fallacies: pd.DataFrame, punish_missing: bool = True):
+    """
+    Add identification predictions and scores (0 or 1) to the DataFrame.
+
+    Args:
+        df_fallacies: DataFrame with fallacy predictions
+        punish_missing: If True, missing/invalid predictions are penalized with a score of 0.
+                        If False, missing predictions are ignored and do not affect the accuracy.
+    """
     response_cols = [col for col in df_fallacies.columns if col.endswith('_response')]
     for response_col in response_cols:
         llm_key = response_col.removesuffix('_response')
@@ -50,6 +58,10 @@ def add_identification_scores(df_fallacies: pd.DataFrame, punish_missing: bool =
 
 
 def _get_identification_prediction(label: int, response: str) -> Union[int, pd.NA]:
+    """
+    Return the identification prediction (0=Yes, 1=No) based on the response.
+    """
+
     # The model don't seem to respond in lowercase yes or no. But in chain-of-thought prompt
     # responses, the reasoning sometimes contains the word "no", when the final answer is "Yes".
     contains_yes = bool(re.search(r'\bYes\b', response))
@@ -62,6 +74,9 @@ def _get_identification_prediction(label: int, response: str) -> Union[int, pd.N
 
 
 def add_classification_scores(df_fallacies: pd.DataFrame, punish_missing: bool = True):
+    """
+    Add classification predictions (fallacy type) and scores (0 or 1) to the DataFrame.
+    """
     fallacies = get_fallacy_list()
     response_cols = [col for col in df_fallacies.columns if col.endswith('_response')]
     for response_col in response_cols:
@@ -80,10 +95,12 @@ def add_classification_scores(df_fallacies: pd.DataFrame, punish_missing: bool =
 
 
 def _get_classification_prediction(fallacies: list[str], response: str) -> Union[str, pd.NA]:
+    """Return the classification prediction (fallacy type) based on the response."""
     if response == '' or response == RESPONSE_ERROR:
         return pd.NA
 
     for fallacy in fallacies:
+        # Check if the response contains the fallacy name, ignoring case
         if bool(re.search(fallacy, response, re.IGNORECASE)):
             return fallacy
 
@@ -148,7 +165,8 @@ def add_llm_info(df: pd.DataFrame, label=False, group=False, provider=False):
 
 
 def get_confusion_matrices(df_fallacies: pd.DataFrame, actual_col: str) -> pd.DataFrame:
-    """Returns a multi-index DataFrame with n*n confusion matrices for each LLM.
+    """
+    Returns a multi-index DataFrame with n*n confusion matrices for each LLM.
 
     Args:
         df_fallacies: DataFrame with fallacy predictions
@@ -196,7 +214,9 @@ def get_confusion_matrices(df_fallacies: pd.DataFrame, actual_col: str) -> pd.Da
 
 
 def _get_crosstab(df_fallacies: pd.DataFrame, actual_col: str, pred_col: str) -> pd.DataFrame:
-    """Returns a confusion matrix (cross-tabulation) for the given actual and predicted columns."""
+    """
+    Returns a confusion matrix (cross-tabulation) for the given actual and predicted columns.
+    """
     df_crosstab = pd.crosstab(df_fallacies[pred_col], df_fallacies[actual_col],
                               rownames=['predicted'], colnames=['actual'], dropna=False)
 
@@ -209,7 +229,9 @@ def _get_crosstab(df_fallacies: pd.DataFrame, actual_col: str, pred_col: str) ->
 
 
 def get_confusion_metrics(df_confusion_matrix: pd.DataFrame) -> pd.DataFrame:
-    """Calculate confusion matrix metrics for each label"""
+    """
+    Calculate confusion matrix metrics for each label
+    """
     # Get diagonal elements (true positives)
     true_positives = np.diag(df_confusion_matrix)
 
@@ -249,7 +271,9 @@ def get_confusion_metrics(df_confusion_matrix: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_identification_confusion_metrics(df_confusion_matrices: pd.DataFrame, index_name: str) -> pd.DataFrame:
-    """Calculate confusion metrics for each index_name level."""
+    """
+    Calculate confusion metrics for each index_name level.
+    """
     df_agg = df_confusion_matrices.groupby([index_name, 'label'], observed=True).sum()
 
     # We care about the metrics for label 1 (fallacy) only
@@ -264,7 +288,8 @@ def get_identification_confusion_metrics(df_confusion_matrices: pd.DataFrame, in
 
 
 def get_misclassifications(df_confusion_matrix: pd.DataFrame, n_misclassifications: int = 3) -> pd.DataFrame:
-    """Return a DataFrame with accuracy and top N misclassifications per label.
+    """
+    Return a DataFrame with accuracy and top N misclassifications per label.
 
     Parameters:
         df_confusion_matrix: Confusion matrix where rows are predicted labels and columns are actual labels
@@ -314,9 +339,7 @@ def mcnemar_test(false_positives: int, false_negatives: int) -> float:
     - It's particularly suitable when you want to compare the off-diagonal elements of a 2x2 confusion matrix
     """
     # Create the contingency table for McNemar's test
-    # Note: Only the off-diagonal elements (FP and FN) are used
     contingency_table = np.array([[0, false_positives],
                                   [false_negatives, 0]])
 
-    # Perform McNemar's test
     return mcnemar(contingency_table).pvalue

@@ -16,7 +16,7 @@ FALLACIES_PLACEHOLDER = '[fallacies]'
 
 def get_fallacy_df(filename: str, only_incorrect: bool = False) -> pd.DataFrame:
     """
-    Load the fallacy identification dataframe from a CSV file, or create a new one if the file doesn't exist.
+    Load the fallacy dataframe from a CSV file, or create a new one if the file doesn't exist.
     """
     try:
         df = pd.read_csv(filename)
@@ -41,6 +41,9 @@ def get_fallacy_df(filename: str, only_incorrect: bool = False) -> pd.DataFrame:
 
 
 def save_fallacy_df(df_fallacies: pd.DataFrame, filename: str):
+    """
+    Save the fallacy dataframe to a CSV file.
+    """
     df_fallacies.to_csv(filename, index=False)
 
 
@@ -122,9 +125,6 @@ Let's think step by step and then answer "Yes" or "No".
 
 
 def get_classification_prompt_template() -> str:
-    """
-    Get the template for the classification prompt
-    """
     # Newline characters will be preserved in the multi-line prompt
     prompt_template = f"""You are a logical fallacy classifier. Given an incorrect reasoning step, your task is to identify its type of fallacy.
 Answer by choosing one of these fallacies:
