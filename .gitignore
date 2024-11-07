@@ -2,6 +2,6 @@
 /fallacy-detection-438712-db75e64bb2f9.json
 test.ipynb
 Chat_finetuning_data_prep.ipynb
-datasets/FALLACIES/fallacies-reformat.json
-data/fallacies_e1_human_empty.csv
+datasets/FALLACIES/fallacies_reformat.json
+data/fallacies_e11_human_empty.csv
 plot
