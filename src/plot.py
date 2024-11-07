@@ -123,5 +123,6 @@ def plot_classification_confusion_matrix(df_confusion, title: str, figsize=(10, 
 
 
 def save_plot(title: str):
-    plt.savefig(f'plot/{title}.svg', format='svg', dpi=DPI, bbox_inches='tight')
-    plt.savefig(f'plot/{title}.png', dpi=DPI, bbox_inches='tight')
+    filename = title.replace(' ', '_')
+    plt.savefig(f'plot/{filename}.svg', format='svg', dpi=DPI, bbox_inches='tight')
+    plt.savefig(f'plot/{filename}.png', dpi=DPI, bbox_inches='tight')
