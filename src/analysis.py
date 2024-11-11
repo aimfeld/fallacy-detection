@@ -32,7 +32,7 @@ def get_sanity_check(df_fallacies: pd.DataFrame) -> pd.DataFrame:
                         index=['response_length_mean', 'missing_responses', 'invalid_predictions'], ).T.astype(types)
 
 
-def add_identification_scores(df_fallacies: pd.DataFrame, punish_missing: bool = True):
+def add_identification_scores(df_fallacies: pd.DataFrame, punish_missing: bool = True, flip: bool = False):
     """
     Add identification predictions and scores (0 or 1) to the DataFrame.
 
@@ -40,6 +40,7 @@ def add_identification_scores(df_fallacies: pd.DataFrame, punish_missing: bool =
         df_fallacies: DataFrame with fallacy predictions
         punish_missing: If True, missing/invalid predictions are penalized with a score of 0.
                         If False, missing predictions are ignored and do not affect the accuracy.
+        flip: If True, flip the identification prediction (0=No, 1=Yes) to account for prompt variation.
     """
     response_cols = [col for col in df_fallacies.columns if col.endswith('_response')]
     for response_col in response_cols:
@@ -49,7 +50,11 @@ def add_identification_scores(df_fallacies: pd.DataFrame, punish_missing: bool =
         df_fallacies[pred_column] = df_fallacies.apply(
             lambda row: _get_identification_prediction(row["label"], row[response_col]), axis=1
         )
+        if flip:
+            df_fallacies[pred_column] = df_fallacies[pred_column].apply(lambda x: 1 - x)
+
         df_fallacies[pred_column] = pd.Categorical(df_fallacies[pred_column], categories=[1, 0])
+
         df_fallacies[score_column] = (df_fallacies['label'] == df_fallacies[pred_column]).astype('UInt8')
 
         if not punish_missing:

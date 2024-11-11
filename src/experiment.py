@@ -105,6 +105,14 @@ def get_identification_zero_shot_prompt_template() -> str:
 {STEP_PLACEHOLDER}"""
 
 
+def get_identification_zero_shot_prompt_template_v2() -> str:
+    """
+    A slight variation of the zero-shot identification prompt, to see whether false positives can be reduced by wording.
+    """
+    return f"""Does the following reasoning step contain a logical fallacy? You can only answer "Yes" or "No".
+{STEP_PLACEHOLDER}"""
+
+
 def get_identification_few_shot_prompt_template() -> str:
     return f"""Is the following reasoning step correct? You can only answer "Yes" or "No".
 Since if it's raining then the streets are wet and it's raining now, therefore, the streets are wet.
