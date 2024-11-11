@@ -4,4 +4,5 @@ test.ipynb
 Chat_finetuning_data_prep.ipynb
 datasets/FALLACIES/fallacies_reformat.json
 data/fallacies_e11_human_empty.csv
+data/fallacies_e11_human_errors.csv
 plot
