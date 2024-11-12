@@ -37,6 +37,7 @@ class LLM(Enum):
     O1_MINI = ("o1_mini", "o1-mini", LLMGroup.REASONING, LLMProvider.OPENAI)
     O1_PREVIEW = ("o1_preview", "o1-preview", LLMGroup.REASONING, LLMProvider.OPENAI)
     CLAUDE_3_5_SONNET = ("claude_3_5_sonnet", "Claude 3.5 Sonnet", LLMGroup.LARGE, LLMProvider.ANTHROPIC)
+    CLAUDE_3_5_SONNET_20241022 = ("claude_3_5_sonnet_20241022", "Claude 3.5 Sonnet 20241022", LLMGroup.LARGE, LLMProvider.ANTHROPIC)
     CLAUDE_3_OPUS = ("claude_3_opus", "Claude 3 Opus", LLMGroup.LARGE, LLMProvider.ANTHROPIC)
     CLAUDE_3_HAIKU = ("claude_3_haiku", "Claude 3 Haiku", LLMGroup.SMALL, LLMProvider.ANTHROPIC)
     GEMINI_1_5_PRO = ("gemini_1_5_pro", "Gemini 1.5 Pro", LLMGroup.LARGE, LLMProvider.GOOGLE)
@@ -165,9 +166,9 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
     # Anthropic
     # https://console.anthropic.com/dashboard
     # https://docs.anthropic.com/en/docs/about-claude/models
+    # https://python.langchain.com/docs/integrations/platforms/anthropic/
     # -------------------------------------------------------------------------
     if LLM.CLAUDE_3_5_SONNET in llm_names:
-        # https://python.langchain.com/docs/integrations/platforms/anthropic/
         llms[LLM.CLAUDE_3_5_SONNET] = ChatAnthropic(
             api_key=os.getenv("ANTHROPIC_API_KEY"),
             model="claude-3-5-sonnet-20240620",
@@ -176,8 +177,17 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             max_retries=2,
         )
 
+    # The latest version of Claude 3.5 Sonnet, but the main model under test here is version 20240620
+    if LLM.CLAUDE_3_5_SONNET_20241022 in llm_names:
+        llms[LLM.CLAUDE_3_5_SONNET_20241022] = ChatAnthropic(
+            api_key=os.getenv("ANTHROPIC_API_KEY"),
+            model="claude-3-5-sonnet-20241022",
+            temperature=0,
+            timeout=3.0,
+            max_retries=2,
+        )
+
     if LLM.CLAUDE_3_OPUS in llm_names:
-        # https://python.langchain.com/docs/integrations/platforms/anthropic/
         llms[LLM.CLAUDE_3_OPUS] = ChatAnthropic(
             api_key=os.getenv("ANTHROPIC_API_KEY"),
             model="claude-3-opus-20240229",
@@ -187,7 +197,6 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
         )
 
     if LLM.CLAUDE_3_HAIKU in llm_names:
-        # https://python.langchain.com/docs/integrations/platforms/anthropic/
         llms[LLM.CLAUDE_3_HAIKU] = ChatAnthropic(
             api_key=os.getenv("ANTHROPIC_API_KEY"),
             model="claude-3-haiku-20240307",
