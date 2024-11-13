@@ -3,6 +3,7 @@ This module functions for dealing with the FALLACIES dataset by Hong et al. (202
 """
 import pandas as pd
 import json
+from .utils import log
 
 
 def create_fallacy_df() -> pd.DataFrame:
@@ -12,6 +13,39 @@ def create_fallacy_df() -> pd.DataFrame:
     df['step'] = df['step'].apply(_remove_square_brackets)
 
     return df
+
+
+def get_fallacy_df(filename: str, only_incorrect: bool = False) -> pd.DataFrame:
+    """
+    Load the fallacy dataframe from a CSV file, or create a new one if the file doesn't exist.
+    """
+    try:
+        df = pd.read_csv(filename)
+        df = df.fillna('')
+
+        log(f"Loaded existing fallacy dataframe from {filename}.")
+    except FileNotFoundError:
+        df = create_fallacy_df()
+
+        log("Created new fallacy identification dataframe.")
+
+    if only_incorrect:
+        # Select only incorrect reasoning steps
+        df = df[df['label'] == 1]
+
+    df['label'] = pd.Categorical(df['label'], categories=[1, 0])
+    df['fallacy'] = pd.Categorical(df['fallacy'], categories=get_fallacy_list())
+    df['category'] = pd.Categorical(df['category'], categories=['formal', 'informal'])
+    df['subcategory'] = pd.Categorical(df['subcategory'])
+
+    return df
+
+
+def save_fallacy_df(df_fallacies: pd.DataFrame, filename: str):
+    """
+    Save the fallacy dataframe to a CSV file.
+    """
+    df_fallacies.to_csv(filename, index=False)
 
 
 def get_fallacy_list() -> list[str]:
