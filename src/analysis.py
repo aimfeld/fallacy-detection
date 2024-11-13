@@ -6,7 +6,7 @@ import numpy as np
 import re
 from typing import Union
 from .llms import LLM, LLMGroup, LLMProvider
-from .experiment import RESPONSE_ERROR
+from .constants import RESPONSE_ERROR
 from .fallacies import get_fallacy_list, add_taxonomy
 from statsmodels.stats.contingency_tables import mcnemar
 

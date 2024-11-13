@@ -3,7 +3,9 @@ LLMs (Large Language Models) for Fallacy Detection.
 """
 import os
 
+from .search import FallacyResponse
 from langchain_core.runnables import Runnable
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -292,6 +294,41 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             timeout=30.0, # This API times out a lot
             max_retries=5,
         )
+
+    return llms
+
+def get_fallacy_search_llms(llm_names: list[LLM]) -> LLMs:
+    """
+    Get the LLM for searching for fallacies in text. Only OpenAI models with structured outputs are supported, see
+    https://platform.openai.com/docs/guides/structured-outputs
+    """
+    llms: LLMs = {}
+
+    if LLM.GPT_4O in llm_names:
+        llms[LLM.GPT_4O] = ChatOpenAI(
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            model="gpt-4o-2024-08-06",
+            temperature=0, # Higher temperature might generate more identified fallacies
+            timeout=10.0,
+            max_retries=2,
+        )
+
+    if LLM.GPT_4O_MINI in llm_names:
+        llms[LLM.GPT_4O_MINI] = ChatOpenAI(
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            model="gpt-4o-mini-2024-07-18",
+            temperature=0,
+            timeout=10.0,
+            max_retries=2,
+        )
+
+    prompt = ChatPromptTemplate.from_messages(
+        [('system', '{system_prompt}'), ('user', '{input}')]
+    )
+
+    # Models will generate validated structured outputs.
+    for llm in llms:
+        llms[llm] = prompt | llms[llm].with_structured_output(FallacyResponse, method='json_schema')
 
     return llms
 
