@@ -4,7 +4,7 @@ This module contains the main experiment logic.
 import pandas as pd
 from .llms import LLMs
 from .utils import log
-from .fallacies import create_fallacy_df, get_fallacy_list
+from .fallacies import save_fallacy_df, get_fallacy_list
 from time import sleep
 from langchain_core.messages.ai import AIMessage
 
@@ -12,39 +12,6 @@ from langchain_core.messages.ai import AIMessage
 RESPONSE_ERROR = 'error'
 STEP_PLACEHOLDER = '[step]'
 FALLACIES_PLACEHOLDER = '[fallacies]'
-
-
-def get_fallacy_df(filename: str, only_incorrect: bool = False) -> pd.DataFrame:
-    """
-    Load the fallacy dataframe from a CSV file, or create a new one if the file doesn't exist.
-    """
-    try:
-        df = pd.read_csv(filename)
-        df = df.fillna('')
-
-        log(f"Loaded existing fallacy dataframe from {filename}.")
-    except FileNotFoundError:
-        df = create_fallacy_df()
-
-        log("Created new fallacy identification dataframe.")
-
-    if only_incorrect:
-        # Select only incorrect reasoning steps
-        df = df[df['label'] == 1]
-
-    df['label'] = pd.Categorical(df['label'], categories=[1, 0])
-    df['fallacy'] = pd.Categorical(df['fallacy'], categories=get_fallacy_list())
-    df['category'] = pd.Categorical(df['category'], categories=['formal', 'informal'])
-    df['subcategory'] = pd.Categorical(df['subcategory'])
-
-    return df
-
-
-def save_fallacy_df(df_fallacies: pd.DataFrame, filename: str):
-    """
-    Save the fallacy dataframe to a CSV file.
-    """
-    df_fallacies.to_csv(filename, index=False)
 
 
 def run_experiment(df_fallacies: pd.DataFrame, filename: str, prompt_template: str, llms: LLMs,
