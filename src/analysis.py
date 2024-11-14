@@ -1,5 +1,6 @@
 """
-This module contains functions for analyzing the fallacy experiments.
+This module contains functions for analyzing the fallacy identification and classification experiments, based on
+the FALLACIES dataset by Hong et al. (2024).
 """
 import pandas as pd
 import numpy as np
@@ -48,7 +49,7 @@ def add_identification_scores(df_fallacies: pd.DataFrame, punish_missing: bool =
         pred_column = f"{llm_key}_pred"
         score_column = f"{llm_key}_score"
         df_fallacies[pred_column] = df_fallacies.apply(
-            lambda row: _get_identification_prediction(row["label"], row[response_col]), axis=1
+            lambda row: _get_identification_prediction(row[response_col]), axis=1
         )
         if flip:
             df_fallacies[pred_column] = df_fallacies[pred_column].apply(lambda x: 1 - x)
@@ -62,7 +63,7 @@ def add_identification_scores(df_fallacies: pd.DataFrame, punish_missing: bool =
             df_fallacies.loc[df_fallacies[pred_column].isna(), score_column] = pd.NA
 
 
-def _get_identification_prediction(label: int, response: str) -> Union[int, pd.NA]:
+def _get_identification_prediction(response: str) -> Union[int, pd.NA]:
     """
     Return the identification prediction (0=Yes, 1=No) based on the response.
     """

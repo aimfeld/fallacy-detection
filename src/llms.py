@@ -309,7 +309,7 @@ def get_fallacy_search_llms(llm_names: list[LLM]) -> LLMs:
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-4o-2024-08-06",
             temperature=0, # Higher temperature might generate more identified fallacies
-            timeout=10.0,
+            timeout=30.0,
             max_retries=2,
         )
 
@@ -318,7 +318,7 @@ def get_fallacy_search_llms(llm_names: list[LLM]) -> LLMs:
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-4o-mini-2024-07-18",
             temperature=0,
-            timeout=10.0,
+            timeout=30.0,
             max_retries=2,
         )
 
