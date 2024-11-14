@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from typing import List
 from enum import Enum
 
-class FallacyType(Enum):
+class Fallacy(Enum):
     """
     MAFALDA fallacy types.
     """
@@ -29,7 +29,7 @@ class FallacyType(Enum):
     HASTY_GENERALIZATION = "Hasty Generalization"
     SLIPPERY_SLOPE = "Slippery Slope"
     STRAWMAN_FALLACY = "Strawman Fallacy"
-    ABUSIVE_AD_HOMINEM = "Abusive Ad Hominem"
+    AD_HOMINEM = "Ad Hominem"
     AD_POPULUM = "Ad Populum"
     APPEAL_TO_AUTHORITY = "Appeal to Authority"
     APPEAL_TO_NATURE = "Appeal to Nature"
@@ -38,11 +38,11 @@ class FallacyType(Enum):
     TU_QUOQUE = "Tu Quoque"
 
 
-class Fallacy(BaseModel):
+class FallacyEntry(BaseModel):
     """
     A fallacy found in the MAFALDA dataset, spanning one or more sentences.
     """
-    fallacy: FallacyType = Field(description="The identified fallacy.")
+    fallacy: Fallacy = Field(description="The identified fallacy.")
     span: str = Field(
         description="The verbatim text span where the fallacy occurs, consisting of one or more contiguous sentences.")
     reason: str = Field(description="An explanation why the text span contains this fallacy.")
@@ -52,7 +52,7 @@ class FallacyResponse(BaseModel):
     """
     A response from the LLMs for a given input text.
     """
-    fallacies: List[Fallacy] = Field(default_factory=list, title="The list of fallacies found in the text.")
+    fallacies: List[FallacyEntry] = Field(default_factory=list, title="The list of fallacies found in the text.")
 
 
 def create_mafalda_df() -> pd.DataFrame:
