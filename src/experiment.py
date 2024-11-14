@@ -6,7 +6,7 @@ from .llms import LLMs
 from .utils import log
 from .constants import RESPONSE_ERROR
 from .fallacies import save_fallacy_df, get_fallacy_list
-from .mafalda import save_mafalda_df, get_mafalda_fallacies_df
+from .mafalda import save_mafalda_df, FallacyType
 from time import sleep
 from langchain_core.messages.ai import AIMessage
 
@@ -128,8 +128,7 @@ def get_search_system_prompt() -> str:
 Text spans of identified fallacies may overlap and you can assign the same sentence to multiple fallacies if needed. Think step by step. Make sure to include all fallacies you can find.
 """
 
-    df_mafalda_fallacies = get_mafalda_fallacies_df()
-    fallacies_string = ", ".join(df_mafalda_fallacies['fallacy'].tolist())
+    fallacies_string = ', '.join(e.value for e in FallacyType)
     prompt = prompt.replace(FALLACIES_PLACEHOLDER, fallacies_string)
 
     return prompt

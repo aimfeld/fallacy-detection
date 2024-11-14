@@ -3,7 +3,7 @@ LLMs (Large Language Models) for Fallacy Detection.
 """
 import os
 
-from .search import FallacyResponse
+from .mafalda import FallacyResponse
 from langchain_core.runnables import Runnable
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI

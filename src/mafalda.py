@@ -5,7 +5,54 @@ import pandas as pd
 import json
 from .utils import log
 from .constants import RESPONSE_ERROR
-from .search import FallacyResponse
+from pydantic import BaseModel, Field
+from typing import List
+from enum import Enum
+
+class FallacyType(Enum):
+    """
+    MAFALDA fallacy types.
+    """
+    APPEAL_TO_ANGER = "Appeal to Anger"
+    APPEAL_TO_FEAR = "Appeal to Fear"
+    APPEAL_TO_PITY = "Appeal to Pity"
+    APPEAL_TO_POSITIVE_EMOTION = "Appeal to Positive Emotion"
+    APPEAL_TO_RIDICULE = "Appeal to Ridicule"
+    APPEAL_TO_WORSE_PROBLEMS = "Appeal to Worse Problems"
+    CAUSAL_OVERSIMPLIFICATION = "Causal Oversimplification"
+    CIRCULAR_REASONING = "Circular Reasoning"
+    EQUIVOCATION = "Equivocation"
+    FALLACY_OF_DIVISION = "Fallacy of Division"
+    FALSE_ANALOGY = "False Analogy"
+    FALSE_CAUSALITY = "False Causality"
+    FALSE_DILEMMA = "False Dilemma"
+    HASTY_GENERALIZATION = "Hasty Generalization"
+    SLIPPERY_SLOPE = "Slippery Slope"
+    STRAWMAN_FALLACY = "Strawman Fallacy"
+    ABUSIVE_AD_HOMINEM = "Abusive Ad Hominem"
+    AD_POPULUM = "Ad Populum"
+    APPEAL_TO_AUTHORITY = "Appeal to Authority"
+    APPEAL_TO_NATURE = "Appeal to Nature"
+    APPEAL_TO_TRADITION = "Appeal to Tradition"
+    GUILT_BY_ASSOCIATION = "Guilt by Association"
+    TU_QUOQUE = "Tu Quoque"
+
+
+class Fallacy(BaseModel):
+    """
+    A fallacy found in the MAFALDA dataset, spanning one or more sentences.
+    """
+    fallacy: FallacyType = Field(description="The identified fallacy.")
+    span: str = Field(
+        description="The verbatim text span where the fallacy occurs, consisting of one or more contiguous sentences.")
+    reason: str = Field(description="An explanation why the text span contains this fallacy.")
+
+
+class FallacyResponse(BaseModel):
+    """
+    A response from the LLMs for a given input text.
+    """
+    fallacies: List[Fallacy] = Field(default_factory=list, title="The list of fallacies found in the text.")
 
 
 def create_mafalda_df() -> pd.DataFrame:
