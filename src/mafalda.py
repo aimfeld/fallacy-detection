@@ -3,7 +3,7 @@ This module functions for dealing with the MAFALDA dataset and evaluation by Hel
 """
 import pandas as pd
 import json
-import re
+import regex
 from .utils import log
 from .constants import RESPONSE_ERROR
 from .mafalda_metrics.new_metrics import text_full_task_p_r_f1, AnnotatedText, GroundTruthSpan, PredictionSpan
@@ -211,8 +211,16 @@ def _evaluate_response(text: str, labels: list[list[int, int, str]], fallacy_ent
 
 
 def _fuzzy_match(pattern: str, text: str) -> tuple[int | None, int | None]:
-    # TODO: Handle apostrophe encodings and other differences
-    if match := re.search(re.escape(pattern), re.escape(text), re.IGNORECASE):
+    # Sometimes, the span is enclosed with '...some span bla bla...'
+    pattern = pattern.removeprefix('...').removesuffix('...')
+
+    # Sometimes, the model uses different quotation marks than the original text
+    text = text.replace('"', "'")
+    pattern = pattern.replace('"', "'")
+
+    # Allow a few differences
+    fuzzy_pattern = f'({regex.escape(pattern)}){{e<=5}}'
+    if match := regex.search(fuzzy_pattern, text, regex.BESTMATCH):
         return match.start(), match.end()
 
     return None, None
