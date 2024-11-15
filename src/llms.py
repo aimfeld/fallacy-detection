@@ -322,14 +322,7 @@ def get_fallacy_search_llms(llm_names: list[LLM]) -> LLMs:
             max_retries=2,
         )
 
-    if LLM.O1_MINI in llm_names:
-        llms[LLM.O1_MINI] = ChatOpenAI(
-            openai_api_key=os.getenv("OPENAI_API_KEY"),
-            model="o1-mini-2024-09-12",
-            temperature=1, # Only temperature=1 is allowed
-            timeout=120.0, # Needs longer to respond
-            max_retries=2,
-        )
+    # Note that o1-mini does not support the system role, nor structured output
 
     prompt = ChatPromptTemplate.from_messages(
         [('system', '{system_prompt}'), ('user', '{input}')]
