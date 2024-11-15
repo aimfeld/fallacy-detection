@@ -121,11 +121,39 @@ What type of fallacy does the following reasoning step belong to?
 
 
 def get_search_system_prompt() -> str:
-    prompt = f"""You are an expert at detecting logical fallacies. Identify all logical fallacies in the provided text. Answer with a list of fallacies in JSON format. Each fallacy in the fallacies list contains exactly these entries:
-- fallacy: one of the following fallacies: {FALLACIES_PLACEHOLDER}
-- span: the verbatim text span where the fallacy occurs, consisting of one or more contiguous sentences.
-- reason: an explanation why the text span contains this fallacy.
-Text spans of identified fallacies may overlap and you can assign the same sentence to multiple fallacies if needed. Think step by step. Make sure to include all fallacies you can find.
+    prompt = f"""You are an expert at detecting and analyzing logical fallacies. Your task is to detect and analyze logical fallacies in the provided text with high precision. 
+
+Output Format:
+Provide your analysis in JSON format with the following structure for each identified fallacy:
+{{
+  "fallacies": [
+    {{
+      "fallacy": "<fallacy_type>",
+      "span": "<exact_text>",
+      "reason": "<explanation>",
+      "confidence": <0.0-1.0>
+    }}
+  ]
+}}
+
+Guidelines:
+1. Fallacy Types: Only use fallacies from this approved list: {FALLACIES_PLACEHOLDER}
+2. Text Spans:
+   - Include the complete context needed to understand the fallacy, but not more than necessary.
+   - Can overlap with other identified fallacies
+   - Must be verbatim quotes from the original text
+3. Reasoning:
+   - Provide clear, specific explanations
+   - Include both why it qualifies as a fallacy and how it violates logical reasoning
+4. Confidence Score:
+   - Rate your confidence in each identification from 0.0 to 1.0
+
+Principles:
+- Think step by step
+- Be thorough but avoid over-identification
+- Apply the principle of charity: interpret arguments in their strongest reasonable form
+- Consider context and implicit assumptions
+- Return an empty list if no clear logical fallacies are present
 """
 
     fallacies_string = ', '.join(e.value for e in Fallacy)

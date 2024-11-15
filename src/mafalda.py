@@ -50,6 +50,7 @@ class FallacyEntry(BaseModel):
     span: str = Field(
         description="The verbatim text span where the fallacy occurs, consisting of one or more contiguous sentences.")
     reason: str = Field(description="An explanation why the text span contains this fallacy.")
+    confidence: float = Field(description="Confidence rating from 0.0 to 1.0.")
 
 
 class FallacyResponse(BaseModel):
@@ -192,9 +193,13 @@ def get_mean_metrics(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(metrics).T
 
 
-def evaluate_responses(df: pd.DataFrame):
+def evaluate_responses(df: pd.DataFrame, confidence_threshold: float = 0.5):
     """
-    Evaluate the identified fallacies in the MAFALDA dataset.
+    Evaluates the precision, recall, and F1 score for responses in the dataframe based on provided confidence threshold.
+
+    Args:
+        df: DataFrame containing model responses
+        confidence_threshold: Fallacies with a lower confidence rating will be ignored.
     """
     response_cols = [col for col in df.columns if col.endswith('_response')]
     for response_col in response_cols:
@@ -203,15 +208,18 @@ def evaluate_responses(df: pd.DataFrame):
         recall_col = f"{llm_key}_recall"
         f1_col = f"{llm_key}_f1"
 
+        log(f'Evaluating responses for {llm_key} ...')
         for index, row in df.iterrows():
-            precision, recall, f1 = _evaluate_response(row['text'], row['labels'], row[response_col].fallacies)
+            precision, recall, f1 = _evaluate_response(row['text'], row['labels'], row[response_col].fallacies,
+                                                       confidence_threshold)
 
             df.at[index, precision_col] = precision
             df.at[index, recall_col] = recall
             df.at[index, f1_col] = f1
 
 
-def _evaluate_response(text: str, labels: list[list[int, int, str]], fallacy_entries: list[FallacyEntry]) \
+def _evaluate_response(text: str, labels: list[list[int, int, str]], fallacy_entries: list[FallacyEntry],
+                       confidence_threshold: float) \
         -> tuple[float, float, float]:
     gold_spans = []
     for label_span in labels:
@@ -223,6 +231,8 @@ def _evaluate_response(text: str, labels: list[list[int, int, str]], fallacy_ent
 
     pred_spans = []
     for entry in fallacy_entries:
+        if entry.confidence < confidence_threshold:
+            continue
         start, end = _fuzzy_match(entry.span, text)
         if start is not None and end is not None:
             label = LEVEL_2_NUMERIC[FALLACY_2_LABEL[entry.fallacy.value]]
