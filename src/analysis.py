@@ -297,7 +297,7 @@ def get_misclassifications(df_confusion_matrix: pd.DataFrame, n_misclassificatio
     """
     Return a DataFrame with accuracy and top N misclassifications per label.
 
-    Parameters:
+    Args:
         df_confusion_matrix: Confusion matrix where rows are predicted labels and columns are actual labels
         n_misclassifications: Number of top misclassifications to include per label
 

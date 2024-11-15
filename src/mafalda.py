@@ -168,6 +168,30 @@ def save_mafalda_df(df: pd.DataFrame, filename: str):
     df.to_csv(filename, index=False)
 
 
+def get_mean_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculates the mean precision, recall, and F1 score for each model.
+
+    Args:
+        df: DataFrame containing model responses and their corresponding precision, recall, and F1 scores.
+
+    Returns:
+        DataFrame with the mean precision, recall, and F1 scores for each model.
+    """
+    response_cols = [col for col in df.columns if col.endswith('_response')]
+    metrics: dict[str: pd.Series] = {}
+    for response_col in response_cols:
+        llm_key = response_col.removesuffix('_response')
+        precision_col = f"{llm_key}_precision"
+        recall_col = f"{llm_key}_recall"
+        f1_col = f"{llm_key}_f1"
+        metrics[llm_key] = df[[precision_col, recall_col, f1_col]].mean()
+        metrics[llm_key].index = ['precision', 'recall', 'f1']
+
+
+    return pd.DataFrame(metrics).T
+
+
 def evaluate_responses(df: pd.DataFrame):
     """
     Evaluate the identified fallacies in the MAFALDA dataset.
@@ -205,7 +229,7 @@ def _evaluate_response(text: str, labels: list[list[int, int, str]], fallacy_ent
             span = PredictionSpan(entry.span, label, [start, end])
             pred_spans.append(span)
         else:
-            print(f"Failed to match span for fallacy {entry.fallacy}:\nspan: {entry.span}\ntext: {text}")
+            print(f"Warning: failed to match span for fallacy {entry.fallacy}:\nspan: {entry.span}\ntext: {text}")
 
     return text_full_task_p_r_f1(AnnotatedText(pred_spans), AnnotatedText(gold_spans))
 
