@@ -131,6 +131,7 @@ Provide your analysis in JSON format with the following structure for each ident
       "fallacy": "<fallacy_type>",
       "span": "<exact_text>",
       "reason": "<explanation>",
+      "defense": "<counter_argument>",
       "confidence": <0.0-1.0>
     }}
   ]
@@ -139,19 +140,22 @@ Provide your analysis in JSON format with the following structure for each ident
 Guidelines:
 1. Fallacy Types: Only use fallacies from this approved list: {FALLACIES_PLACEHOLDER}
 2. Text Spans:
-   - Include the complete context needed to understand the fallacy, but not more than necessary.
+   - Include the complete context needed to understand the fallacy, but keep the span as short as possible
    - Can overlap with other identified fallacies
    - Must be verbatim quotes from the original text
 3. Reasoning:
    - Provide clear, specific explanations
    - Include both why it qualifies as a fallacy and how it violates logical reasoning
-4. Confidence Score:
-   - Rate your confidence in each identification from 0.0 to 1.0
+4. Defense:
+   - Provide the strongest possible charitable interpretation under the assumption that the argument is valid or reasonable, and not a fallacy
+   - Consider implicit premises that could validate the argument
+5. Confidence Score:
+   - Rate your confidence in each fallacy identification from 0.0 to 1.0, taking into account the reasoning and defense
 
 Principles:
 - Think step by step
-- Be thorough but avoid over-identification
-- Apply the principle of charity: interpret arguments in their strongest reasonable form
+- Be very thorough and include all potential fallacies in the provided text
+- Adjust confidence scores downward in proportion to the strength and plausibility of the defense
 - Consider context and implicit assumptions
 - Return an empty list if no clear logical fallacies are present
 """

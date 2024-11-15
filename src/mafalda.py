@@ -2,13 +2,14 @@
 This module functions for dealing with the MAFALDA dataset and evaluation by Helwe et al. (2024).
 """
 import pandas as pd
+import numpy as np
 import json
 import regex
 from .utils import log
 from .constants import RESPONSE_ERROR
 from .mafalda_metrics.new_metrics import text_full_task_p_r_f1, AnnotatedText, GroundTruthSpan, PredictionSpan
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 from enum import Enum
 
 
@@ -50,6 +51,7 @@ class FallacyEntry(BaseModel):
     span: str = Field(
         description="The verbatim text span where the fallacy occurs, consisting of one or more contiguous sentences.")
     reason: str = Field(description="An explanation why the text span contains this fallacy.")
+    defense: Optional[str] = Field(description="A counter-argument against the fallacy claim which explains how the argument could still be valid or reasonable.", default=None)
     confidence: float = Field(description="Confidence rating from 0.0 to 1.0.")
 
 
@@ -169,7 +171,7 @@ def save_mafalda_df(df: pd.DataFrame, filename: str):
     df.to_csv(filename, index=False)
 
 
-def get_mean_metrics(df: pd.DataFrame) -> pd.DataFrame:
+def get_llm_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculates the mean precision, recall, and F1 score for each model.
 
@@ -180,17 +182,30 @@ def get_mean_metrics(df: pd.DataFrame) -> pd.DataFrame:
         DataFrame with the mean precision, recall, and F1 scores for each model.
     """
     response_cols = [col for col in df.columns if col.endswith('_response')]
-    metrics: dict[str: pd.Series] = {}
+    llm_metrics: dict[str: pd.Series] = {}
     for response_col in response_cols:
         llm_key = response_col.removesuffix('_response')
         precision_col = f"{llm_key}_precision"
         recall_col = f"{llm_key}_recall"
         f1_col = f"{llm_key}_f1"
-        metrics[llm_key] = df[[precision_col, recall_col, f1_col]].mean()
-        metrics[llm_key].index = ['precision', 'recall', 'f1']
+        metrics = df[[precision_col, recall_col, f1_col]].mean()
+
+        confidence_ratings = []
+        fallacy_counts = []
+        fallacy_response: FallacyResponse
+        for fallacy_response in df[response_col]:
+            fallacy_counts.append(len(fallacy_response.fallacies))
+            for entry in fallacy_response.fallacies:
+                confidence_ratings.append(entry.confidence)
+
+        metrics['fallacy_count'] = np.mean(fallacy_counts)
+        metrics['confidence'] = np.mean(confidence_ratings)
+        metrics.index = ['precision', 'recall', 'f1', 'fallacy_count', 'confidence']
+
+        llm_metrics[llm_key] = metrics
 
 
-    return pd.DataFrame(metrics).T
+    return pd.DataFrame(llm_metrics).T
 
 
 def evaluate_responses(df: pd.DataFrame, confidence_threshold: float = 0.5):
