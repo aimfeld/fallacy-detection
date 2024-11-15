@@ -1,13 +1,17 @@
 """
-This module functions for dealing with the MAFALDA dataset by Helwe et al. (2024).
+This module functions for dealing with the MAFALDA dataset and evaluation by Helwe et al. (2024).
 """
 import pandas as pd
 import json
+import re
 from .utils import log
 from .constants import RESPONSE_ERROR
+from .mafalda_metrics.new_metrics import text_full_task_p_r_f1, AnnotatedText, GroundTruthSpan, PredictionSpan
 from pydantic import BaseModel, Field
 from typing import List
 from enum import Enum
+
+
 
 class Fallacy(Enum):
     """
@@ -54,6 +58,61 @@ class FallacyResponse(BaseModel):
     """
     fallacies: List[FallacyEntry] = Field(default_factory=list, title="The list of fallacies found in the text.")
 
+# Map fallacies to string labels
+FALLACY_2_LABEL: dict[str, str] = {
+    Fallacy.APPEAL_TO_ANGER.value: 'appeal to anger',
+    Fallacy.APPEAL_TO_FEAR.value: 'appeal to fear',
+    Fallacy.APPEAL_TO_PITY.value: 'appeal to pity',
+    Fallacy.APPEAL_TO_POSITIVE_EMOTION.value: 'appeal to positive emotion',
+    Fallacy.APPEAL_TO_RIDICULE.value: 'appeal to ridicule',
+    Fallacy.APPEAL_TO_WORSE_PROBLEMS.value: 'appeal to worse problems',
+    Fallacy.CAUSAL_OVERSIMPLIFICATION.value: 'causal oversimplification',
+    Fallacy.CIRCULAR_REASONING.value: 'circular reasoning',
+    Fallacy.EQUIVOCATION.value: 'equivocation',
+    Fallacy.FALLACY_OF_DIVISION.value: 'fallacy of division',
+    Fallacy.FALSE_ANALOGY.value: 'false analogy',
+    Fallacy.FALSE_CAUSALITY.value: 'false causality',
+    Fallacy.FALSE_DILEMMA.value: 'false dilemma',
+    Fallacy.HASTY_GENERALIZATION.value: 'hasty generalization',
+    Fallacy.SLIPPERY_SLOPE.value: 'slippery slope',
+    Fallacy.STRAWMAN_FALLACY.value: 'straw man',
+    Fallacy.AD_HOMINEM.value: 'ad hominem',
+    Fallacy.AD_POPULUM.value: 'ad populum',
+    Fallacy.APPEAL_TO_AUTHORITY.value: 'appeal to (false) authority',
+    Fallacy.APPEAL_TO_NATURE.value: 'appeal to nature',
+    Fallacy.APPEAL_TO_TRADITION.value: 'appeal to tradition',
+    Fallacy.GUILT_BY_ASSOCIATION.value: 'guilt by association',
+    Fallacy.TU_QUOQUE.value: 'tu quoque',
+}
+
+# Map string labels to numeric labels
+LEVEL_2_NUMERIC = {
+    "nothing": 0,
+    "appeal to positive emotion": 1,
+    "appeal to anger": 2,
+    "appeal to fear": 3,
+    "appeal to pity": 4,
+    "appeal to ridicule": 5,
+    "appeal to worse problems": 6,
+    "causal oversimplification": 7,
+    "circular reasoning": 8,
+    "equivocation": 9,
+    "false analogy": 10,
+    "false causality": 11,
+    "false dilemma": 12,
+    "hasty generalization": 13,
+    "slippery slope": 14,
+    "straw man": 15,
+    "fallacy of division": 16,
+    "ad hominem": 17,
+    "ad populum": 18,
+    "appeal to (false) authority": 19,
+    "appeal to nature": 20,
+    "appeal to tradition": 21,
+    "guilt by association": 22,
+    "tu quoque": 23,
+}
+
 
 def create_mafalda_df() -> pd.DataFrame:
     df = pd.read_json('datasets/MAFALDA/gold_standard_dataset.jsonl', lines=True)
@@ -75,18 +134,24 @@ def get_mafalda_df(filename: str) -> pd.DataFrame:
 
         log("Created new mafalda dataframe.")
 
-
     df['sentences_with_labels'] = df['sentences_with_labels'].apply(json.loads)
 
+    # Parse json strings into validated FallacyResponse objects
     response_cols = [col for col in df.columns if col.endswith('_response')]
     for col in response_cols:
         df[col] = df[col].apply(lambda x: x if x in ['', RESPONSE_ERROR] else FallacyResponse.model_validate_json(x))
+
+    # Parse strings with list of labels
+    df['labels'] = df['labels'].apply(lambda x: json.loads(x.replace("'", '"')) if isinstance(x, str) else x)
 
     return df
 
 
 def get_mafalda_fallacies_df() -> pd.DataFrame:
-    return pd.read_csv('datasets/MAFALDA/mafalda_fallacies.csv')
+    df = pd.read_csv('datasets/MAFALDA/mafalda_fallacies.csv')
+    df.set_index('fallacy', inplace=True)
+
+    return df
 
 
 def save_mafalda_df(df: pd.DataFrame, filename: str):
@@ -101,3 +166,53 @@ def save_mafalda_df(df: pd.DataFrame, filename: str):
         df[col] = df[col].apply(lambda x: x if x in ['', RESPONSE_ERROR] else FallacyResponse.model_dump_json(x))
 
     df.to_csv(filename, index=False)
+
+
+def evaluate_responses(df: pd.DataFrame):
+    """
+    Evaluate the identified fallacies in the MAFALDA dataset.
+    """
+    response_cols = [col for col in df.columns if col.endswith('_response')]
+    for response_col in response_cols:
+        llm_key = response_col.removesuffix('_response')
+        precision_col = f"{llm_key}_precision"
+        recall_col = f"{llm_key}_recall"
+        f1_col = f"{llm_key}_f1"
+
+        for index, row in df.iterrows():
+            precision, recall, f1 = _evaluate_response(row['text'], row['labels'], row[response_col].fallacies)
+
+            df.at[index, precision_col] = precision
+            df.at[index, recall_col] = recall
+            df.at[index, f1_col] = f1
+
+
+def _evaluate_response(text: str, labels: list[list[int, int, str]], fallacy_entries: list[FallacyEntry]) \
+        -> tuple[float, float, float]:
+    gold_spans = []
+    for label_span in labels:
+        start, end, label = tuple(label_span)
+        if label == 'to clean':
+            continue
+        span = GroundTruthSpan(text[start:end], {LEVEL_2_NUMERIC[label.lower()]}, [start, end])
+        gold_spans.append(span)
+
+    pred_spans = []
+    for entry in fallacy_entries:
+        start, end = _fuzzy_match(entry.span, text)
+        if start is not None and end is not None:
+            label = LEVEL_2_NUMERIC[FALLACY_2_LABEL[entry.fallacy.value]]
+            span = PredictionSpan(entry.span, label, [start, end])
+            pred_spans.append(span)
+        else:
+            print(f"Failed to match span for fallacy {entry.fallacy}:\nspan: {entry.span}\ntext: {text}")
+
+    return text_full_task_p_r_f1(AnnotatedText(pred_spans), AnnotatedText(gold_spans))
+
+
+def _fuzzy_match(pattern: str, text: str) -> tuple[int | None, int | None]:
+    # TODO: Handle apostrophe encodings and other differences
+    if match := re.search(re.escape(pattern), re.escape(text), re.IGNORECASE):
+        return match.start(), match.end()
+
+    return None, None
