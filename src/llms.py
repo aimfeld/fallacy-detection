@@ -322,6 +322,25 @@ def get_fallacy_search_llms(llm_names: list[LLM]) -> LLMs:
             max_retries=2,
         )
 
+    if LLM.GPT_4O_MINI_IDENTIFICATION in llm_names:
+        llms[LLM.GPT_4O_MINI_IDENTIFICATION] = ChatOpenAI(
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            model="ft:gpt-4o-mini-2024-07-18:personal:fallacy-identification-v2:AQH3aRxC",
+            temperature=0,
+            timeout=30.0,
+            max_retries=2,
+        )
+
+    if LLM.GPT_4O_MINI_CLASSIFICATION in llm_names:
+        llms[LLM.GPT_4O_MINI_CLASSIFICATION] = ChatOpenAI(
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            # The model should have been named fallacy-classification, for better constistency in terminology
+            model="ft:gpt-4o-mini-2024-07-18:personal:fallacy-detection-v1:ANJNVY26",
+            temperature=0,
+            timeout=30.0,
+            max_retries=2,
+        )
+
     # Note that o1-mini does not support the system role, nor structured output
 
     prompt = ChatPromptTemplate.from_messages(

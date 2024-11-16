@@ -121,6 +121,11 @@ What type of fallacy does the following reasoning step belong to?
 
 
 def get_search_system_prompt() -> str:
+    """
+    This system prompt has been improved iteratively, based on the MAFALDA F1 score and partial inspection of the
+    response quality by the author.
+    """
+
     prompt = f"""You are an expert at detecting and analyzing logical fallacies. Your task is to detect and analyze logical fallacies in the provided text with high precision. 
 
 Output Format:
