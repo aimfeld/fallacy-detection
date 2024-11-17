@@ -7,7 +7,7 @@ import json
 import regex
 from .utils import log
 from .constants import RESPONSE_ERROR
-from .mafalda_metrics.new_metrics import text_full_task_p_r_f1, AnnotatedText, PredictionSpan
+from .mafalda_metrics.new_metrics import text_full_task_p_r_f1, AnnotatedText, PredictionSpan, GroundTruthSpan
 from .mafalda_metrics.evaluate import build_ground_truth_spans, LEVEL_2_NUMERIC
 from pydantic import BaseModel, Field
 from typing import List, Optional
@@ -51,7 +51,9 @@ class FallacyEntry(BaseModel):
     span: str = Field(
         description="The verbatim text span where the fallacy occurs, consisting of one or more contiguous sentences.")
     reason: str = Field(description="An explanation why the text span contains this fallacy.")
-    defense: Optional[str] = Field(description="A counter-argument against the fallacy claim which explains how the argument could still be valid or reasonable.", default=None)
+    defense: Optional[str] = Field(
+        description="A counter-argument against the fallacy claim which explains how the argument could still be valid or reasonable.",
+        default=None)
     confidence: float = Field(description="Confidence rating from 0.0 to 1.0.")
 
 
@@ -60,6 +62,7 @@ class FallacyResponse(BaseModel):
     A response from the LLMs for a given input text.
     """
     fallacies: List[FallacyEntry] = Field(default_factory=list, title="The list of fallacies found in the text.")
+
 
 # Map fallacies to string labels
 FALLACY_2_LABEL: dict[str, str] = {
@@ -89,6 +92,7 @@ FALLACY_2_LABEL: dict[str, str] = {
 }
 
 Span = tuple[int, int]
+
 
 def create_mafalda_df() -> pd.DataFrame:
     df = pd.read_json('datasets/MAFALDA/gold_standard_dataset.jsonl', lines=True)
@@ -161,6 +165,8 @@ def get_llm_metrics(df: pd.DataFrame) -> pd.DataFrame:
         precision_col = f"{llm_key}_precision"
         recall_col = f"{llm_key}_recall"
         f1_col = f"{llm_key}_f1"
+        mismatch_count_col = f"{llm_key}_mismatch_count"
+
         metrics = df[[precision_col, recall_col, f1_col]].mean()
 
         confidence_ratings = []
@@ -173,21 +179,26 @@ def get_llm_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
         metrics['fallacy_count'] = np.mean(fallacy_counts)
         metrics['confidence'] = np.mean(confidence_ratings)
-        metrics.index = ['precision', 'recall', 'f1', 'fallacy_count', 'confidence']
+        metrics['mismatch_rate'] = np.sum(df[mismatch_count_col]) / len(df)
+        metrics.index = ['precision', 'recall', 'f1', 'fallacy_count', 'confidence', 'mismatch_rate']
 
         llm_metrics[llm_key] = metrics
-
 
     return pd.DataFrame(llm_metrics).T
 
 
-def evaluate_responses(df: pd.DataFrame, confidence_threshold: float = 0.5):
+def evaluate_responses(df: pd.DataFrame, confidence_threshold: float = 0.5,
+                       add_uncovered_spans: bool = True):
     """
     Evaluates the precision, recall, and F1 score for responses in the dataframe based on provided confidence threshold.
 
     Args:
         df: DataFrame containing model responses
         confidence_threshold: Fallacies with a lower confidence rating will be ignored.
+        add_uncovered_spans: Add None labels to gold standard and "nothing" labels to uncovered prediction spans.
+                             If true, this replicates the calculations in Helwe et al. (2024).
+                             However, perfomance metrics are then underestimated, see
+                             https://github.com/ChadiHelwe/MAFALDA/issues/2
     """
     response_cols = [col for col in df.columns if col.endswith('_response')]
     for response_col in response_cols:
@@ -195,56 +206,67 @@ def evaluate_responses(df: pd.DataFrame, confidence_threshold: float = 0.5):
         precision_col = f"{llm_key}_precision"
         recall_col = f"{llm_key}_recall"
         f1_col = f"{llm_key}_f1"
+        mismatch_count_col = f"{llm_key}_mismatch_count"
 
         log(f'Evaluating responses for {llm_key} ...')
         for index, row in df.iterrows():
-            precision, recall, f1 = _evaluate_response(row['text'], row['labels'], row[response_col],
-                                                       confidence_threshold)
+            precision, recall, f1, mismatch_count = _evaluate_response(row['text'], row['labels'], row[response_col],
+                                                                       confidence_threshold, add_uncovered_spans)
 
             df.at[index, precision_col] = precision
             df.at[index, recall_col] = recall
             df.at[index, f1_col] = f1
+            df.at[index, mismatch_count_col] = mismatch_count
+
+        df[mismatch_count_col] = df[mismatch_count_col].astype('UInt16')
 
 
 def _evaluate_response(text: str, labels: list[list], fallacy_response: FallacyResponse,
-                       confidence_threshold: float) \
-        -> tuple[float, float, float]:
+                       confidence_threshold: float, add_uncovered_spans: bool) -> tuple[float, float, float, int]:
     """
     Use the metrics by Helwe et al. (2024) to evaluate a single FallacyResponse.
     """
-    # gold_spans = []
-    # for label_span in labels:
-    #     start, end, label = tuple(label_span)
-    #     if label == 'to clean':
-    #         continue
-    #     span = GroundTruthSpan(text[start:end], {LEVEL_2_NUMERIC[label.lower()]}, [start, end])
-    #     gold_spans.append(span)
+    # Create gold standard annotations
+    if add_uncovered_spans:
+        # Add None label spans to gold standard annotations for uncovered spans
+        gold_annotations = build_ground_truth_spans(text, labels)
+    else:
+        gold_spans = []
+        for label_span in labels:
+            start, end, label = tuple(label_span)
+            if label == 'to clean':
+                continue
+            span = GroundTruthSpan(text[start:end], {LEVEL_2_NUMERIC[label.lower()]}, [start, end])
+            gold_spans.append(span)
+        gold_annotations = AnnotatedText(gold_spans)
 
-    # Gold standard annotations include spans for 'nothing' label
-    gold_annotated_text = build_ground_truth_spans(text, labels)
-
-    # While Helwe et al. (2024)  predict a label for each sentence with a separate prompt, we use a single prompt to
+    # Create prediction annotations
+    # While Helwe et al. (2024) predict a label for each sentence with a separate prompt, we use a single prompt to
     # predict all fallacy spans and types in the given text using a single prompt.
     pred_spans: list[PredictionSpan] = []
     covered_spans: list[Span] = []
+    mismatch_count = 0
     for entry in fallacy_response.fallacies:
         if entry.confidence < confidence_threshold:
             continue
         start, end = _fuzzy_match(entry.span, text)
         if start is not None and end is not None:
             label = LEVEL_2_NUMERIC[FALLACY_2_LABEL[entry.fallacy.value]]
-            span = PredictionSpan(entry.span, label, [start, end])
-            pred_spans.append(span)
+            pred_spans.append(PredictionSpan(entry.span, label, [start, end]))
             covered_spans.append((start, end))
         else:
+            mismatch_count += 1
             print(f"Warning: failed to match span for fallacy {entry.fallacy}:\nspan: {entry.span}\ntext: {text}")
 
-    # Add 'nothing' predictions for uncovered text spans
-    for span in get_uncovered_spans(covered_spans, len(text)):
-        pred_spans.append(PredictionSpan(text[span[0]:span[1]], LEVEL_2_NUMERIC['nothing'], [span[0], span[1]]))
+    if add_uncovered_spans:
+        # Add 'nothing' predictions for uncovered text spans
+        for span in get_uncovered_spans(covered_spans, len(text)):
+            pred_spans.append(PredictionSpan(text[span[0]:span[1]], 0, [span[0], span[1]]))
 
-    p, r, f1 = text_full_task_p_r_f1(AnnotatedText(pred_spans), gold_annotated_text)
-    return p, r, f1
+    pred_annotations = AnnotatedText(pred_spans)
+
+    p, r, f1 = text_full_task_p_r_f1(pred_annotations, gold_annotations)
+    return p, r, f1, mismatch_count
 
 
 def get_uncovered_spans(covered_spans: list[Span], text_length: int) -> list[Span]:
@@ -272,6 +294,7 @@ def get_uncovered_spans(covered_spans: list[Span], text_length: int) -> list[Spa
         uncovered_spans.append((current_pos, text_length))
 
     return uncovered_spans
+
 
 def _fuzzy_match(pattern: str, text: str) -> tuple[int | None, int | None]:
     # Sometimes, the span is enclosed with '...some span bla bla...'
