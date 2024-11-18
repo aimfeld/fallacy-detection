@@ -526,3 +526,28 @@ if __name__ == "__main__":
 
     assert precision_score(pd76, gd7) == 0
     assert recall_score(pd76, gd7) == 0
+
+    # Case 8: https://github.com/ChadiHelwe/MAFALDA/issues/2
+    text81 = 'Two of my best friends are really introverted, shy people, and they both have cats.'
+    text82 = 'That leads to me believe that most cat lovers are really shy.'
+
+    gd8 = AnnotatedText(
+        [
+            GroundTruthSpan(text82, {13}, [84, 145]),
+            GroundTruthSpan(text81, {None}, [0, 83])
+        ]
+    )
+
+    pd81 = AnnotatedText(
+        [
+            PredictionSpan(text82, 13, [84, 145]),
+            PredictionSpan(text81, 0, [0, 83])
+        ]
+    )
+
+    p, r, f1 = text_full_task_p_r_f1(pd81, gd8)
+    assert p == 1, f"Expected precision is 1 but got {p}"
+    assert r == 1, f"Expected recall is 1 but got {r}"
+    assert f1 == 1, f"Expected F1 is 1 but got {f1}"
+
+
