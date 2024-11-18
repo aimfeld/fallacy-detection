@@ -7,40 +7,6 @@ from typing import Any
 from .new_metrics import AnnotatedText, GroundTruthSpan
 
 
-KEWORDS_LEVEL_1_NUMERIC = {
-    "emotion": 1,
-    "logic": 2,
-    "credibility": 3,
-}
-
-LEVEL_2_TO_LEVEL_1 = {
-    "nothing": 0,
-    "appeal to positive emotion": 1,
-    "appeal to anger": 1,
-    "appeal to fear": 1,
-    "appeal to pity": 1,
-    "appeal to ridicule": 1,
-    "appeal to worse problems": 1,
-    "causal oversimplification": 2,
-    "circular reasoning": 2,
-    "equivocation": 2,
-    "false analogy": 2,
-    "false causality": 2,
-    "false dilemma": 2,
-    "hasty generalization": 2,
-    "slippery slope": 2,
-    "straw man": 2,
-    "fallacy of division": 2,
-    "ad hominem": 3,
-    "ad populum": 3,
-    "appeal to (false) authority": 3,
-    "appeal to nature": 3,
-    "appeal to tradition": 3,
-    "guilt by association": 3,
-    "tu quoque": 3,
-}
-
-
 LEVEL_2_NUMERIC = {
     "nothing": 0,
     "appeal to positive emotion": 1,
@@ -68,64 +34,6 @@ LEVEL_2_NUMERIC = {
     "tu quoque": 23,
 }
 
-
-NUMERIC_TO_LEVEL_2 = {
-    0: "nothing",
-    1: "appeal to positive emotion",
-    2: "appeal to anger",
-    3: "appeal to fear",
-    4: "appeal to pity",
-    5: "appeal to ridicule",
-    6: "appeal to worse problems",
-    7: "causal oversimplification",
-    8: "circular reasoning",
-    9: "equivocation",
-    10: "false analogy",
-    11: "false causality",
-    12: "false dilemma",
-    13: "hasty generalization",
-    14: "slippery slope",
-    15: "straw man",
-    16: "fallacy of division",
-    17: "ad hominem",
-    18: "ad populum",
-    19: "appeal to (false) authority",
-    20: "appeal to nature",
-    21: "appeal to tradition",
-    22: "guilt by association",
-    23: "tu quoque",
-    24: "unknown",
-}
-
-KEYWORDS_LEVEL_2_NUMERIC = {
-    "emotion": 1,
-    "anger": 2,
-    "fear": 3,
-    "pity": 4,
-    "ridicule": 5,
-    "worse": 6,
-    "problems": 6,
-    "oversimplification": 7,
-    "circular": 8,
-    "equivocation": 9,
-    "analogy": 10,
-    "causality": 11,
-    "dilemma": 12,
-    "generalization": 13,
-    "slippery": 14,
-    "slope": 14,
-    "straw": 15,
-    "division": 16,
-    "hominem": 17,
-    "populum": 18,
-    "authority": 19,
-    "nature": 20,
-    "tradition": 21,
-    "association": 22,
-    "quoque": 23,
-}
-
-
 LEVEL_2_TO_1 = {
     0: 0,
     1: 1,
@@ -152,35 +60,6 @@ LEVEL_2_TO_1 = {
     22: 3,
     23: 3,
     24: 4,
-}
-
-
-FALLACIES_LEVEL_2_TO_LEVEL_1 = {
-    "nothing": "nothing",
-    "appeal to positive emotion": "emotion",
-    "appeal to anger": "emotion",
-    "appeal to fear": "emotion",
-    "appeal to pity": "emotion",
-    "appeal to ridicule": "emotion",
-    "appeal to worse problems": "emotion",
-    "causal oversimplification": "logic",
-    "circular reasoning": "logic",
-    "equivocation": "logic",
-    "false analogy": "logic",
-    "false causality": "logic",
-    "false dilemma": "logic",
-    "hasty generalization": "logic",
-    "slippery slope": "logic",
-    "straw man": "logic",
-    "fallacy of division": "logic",
-    "ad hominem": "credibility",
-    "ad populum": "credibility",
-    "appeal to (false) authority": "credibility",
-    "appeal to nature": "credibility",
-    "appeal to tradition": "credibility",
-    "guilt by association": "credibility",
-    "tu quoque": "credibility",
-    "unknown": "unknown",
 }
 
 
