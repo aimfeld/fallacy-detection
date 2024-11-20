@@ -126,7 +126,7 @@ def get_llm_metrics(df: pd.DataFrame, exclude_llms: list[str] = []) -> pd.DataFr
             for entry in fallacy_response.fallacies:
                 confidence_ratings.append(entry.confidence)
 
-        metrics['fallacy_count'] = np.mean(fallacy_counts)
+        metrics['fallacies'] = np.mean(fallacy_counts)
         metrics['confidence'] = np.mean(confidence_ratings)
         metrics['mismatch_rate'] = np.sum(df[f'{llm_key}_mismatch_count']) / len(df)
 
@@ -275,11 +275,11 @@ def _get_level_label(label_level_2: int | None, level: int | None) -> int | None
     """
     assert level in [0, 1], 'Invalid level'
     assert label_level_2 is None or 0 <= label_level_2 <= 24, 'Invalid label level 2'
-    
-    if label_level_2 is None:
-        return None # None labels mark uncovered spans in gold standard annotations
-    elif level == 1:
-        return LEVEL_2_TO_1[label_level_2]
+
+    # None labels mark uncovered spans in gold standard annotations. It's unclear why None labels are converted to
+    # None on level 1, but to 0 on level 0. However, we follow the implementation in evaluate.py by Helwe et al. (2024).
+    if level == 1:
+        return None if label_level_2 is None else LEVEL_2_TO_1[label_level_2]
     elif level == 0:
-        return 1 if 0 < label_level_2 < 24 else 0
+        return 1 if label_level_2 is not None and (0 < label_level_2 < 24) else 0
 
