@@ -14,6 +14,8 @@ def initialize_session_state():
         st.session_state.processing = False
     if 'response' not in st.session_state:
         st.session_state.response = None
+    if 'error' not in st.session_state:
+        st.session_state.error = None
 
 
 def show_about_page():
@@ -50,7 +52,7 @@ def show_main_page():
     st.header("Fallacy Search")
 
     # Instruction text
-    st.write("Enter text to analyze it for logical fallacies:")
+    st.write("Enter text to detect logical fallacies and get a reasoning score:")
 
     # Text input area with character limit
     user_text = st.text_area(
@@ -66,16 +68,25 @@ def show_main_page():
         analyze_button = st.button("Analyze", type="primary")
         if analyze_button and user_input:
             st.session_state.response = None
+            st.session_state.error = None
             st.session_state.processing = True
             st.rerun()
 
+    if st.session_state.error:
+        st.error(f"An error occurred: {st.session_state.error}")
+        st.write("Please try again.")
+
     if st.session_state.processing:
         with st.spinner('Processing...'):
-            # response = fallacy_search(user_input, model = 'gpt-4o-mini-2024-07-18')
-            response = fallacy_search(user_input)
-            st.session_state.response = response
-            st.session_state.processing = False
-            st.rerun()
+            try:
+                # response = fallacy_search(user_input, model = 'gpt-4o-mini-2024-07-18')
+                response = fallacy_search(user_input)
+                st.session_state.response = response
+            except Exception as e:
+                st.session_state.error = e
+
+        st.session_state.processing = False
+        st.rerun()
 
     if not st.session_state.processing and st.session_state.response:
         response: FallacyResponse = st.session_state.response
