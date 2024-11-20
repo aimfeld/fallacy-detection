@@ -59,7 +59,7 @@ def show_main_page():
         label="no label",
         label_visibility='hidden', # Hide label
         max_chars=MAX_INPUT_LENGTH,
-        height=200,
+        height=100,
         key="user_input"
     )
     user_input = user_text.strip()
