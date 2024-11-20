@@ -1,6 +1,6 @@
 import streamlit as st
 from dotenv import load_dotenv
-from src.search import get_search_system_prompt, fallacy_search, get_fallacy_response_string
+from src.search import fallacy_search, FallacyResponse
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,8 +23,6 @@ def show_about_page():
 
     The application is designed to help users identify potential logical fallacies in their text. 
     Simply enter your text in the main page, and our system will analyze it for common logical fallacies.
-
-    Note: This is a demonstration version with placeholder analysis results.
     """)
 
 
@@ -33,7 +31,7 @@ def show_main_page():
     st.header("Fallacy Search")
 
     # Instruction text
-    st.write("Some instructions here.")
+    st.write("Enter text to analyze it for logical fallacies:")
 
     # Text input area with character limit
     user_text = st.text_area(
@@ -47,36 +45,49 @@ def show_main_page():
 
     if not st.session_state.processing:
         analyze_button = st.button("Analyze", type="primary")
-        if analyze_button:
+        if analyze_button and user_input:
             st.session_state.response = None
             st.session_state.processing = True
+            st.rerun()
 
-    if user_input and st.session_state.processing:
+    if st.session_state.processing:
         with st.spinner('Processing...'):
             response = fallacy_search(user_input, model = 'gpt-4o-mini-2024-07-18')
             st.session_state.response = response
             st.session_state.processing = False
+            st.rerun()
 
-    if st.session_state.response:
-        st.write(get_fallacy_response_string(st.session_state.response))
+    if not st.session_state.processing and st.session_state.response:
+        response: FallacyResponse = st.session_state.response
+        for fallacy in response.fallacies:
+            st.write(f"Fallacy: {fallacy.fallacy}")
+            st.write(f"Definition: {fallacy.definition}")
+            st.write(f"Span: {fallacy.span}")
+            st.write(f"Reason: {fallacy.reason}")
+            if fallacy.defense:
+                st.write(f"Defense: {fallacy.defense}")
+            st.write(f"Confidence: {fallacy.confidence}")
+            st.write("")
+        st.write(f"Summary: {response.summary}")
+        if response.rating:
+            st.write(f"Rating: {response.rating}")
 
 
 def main():
     """Main application function."""
-    # Set light mode and page config
     st.set_page_config(
         page_title="Fallacy Search",
         page_icon="🔍",
         layout="wide"
     )
 
-    # Initialize session state
+    with open('.streamlit/style.css') as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
     initialize_session_state()
 
-    # Create tabs
     tab1, tab2 = st.tabs(["Fallacy Search", "About"])
 
-    # Display content based on selected tab
     with tab1:
         show_main_page()
     with tab2:
