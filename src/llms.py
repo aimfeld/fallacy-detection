@@ -90,6 +90,7 @@ def init_langchain():
     os.environ["LANGCHAIN_TRACING_V2"] = os.getenv("LANGCHAIN_TRACING_V2")
 
 
+# noinspection PyArgumentList
 def get_llms(llm_names: list[LLM]) -> LLMs:
     llms: LLMs = {}
 
@@ -297,6 +298,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
 
     return llms
 
+# noinspection PyArgumentList
 def get_fallacy_search_llms(llm_names: list[LLM]) -> LLMs:
     """
     Get the LLM for searching for fallacies in text. Only OpenAI models with structured outputs are supported, see
@@ -349,6 +351,7 @@ def get_fallacy_search_llms(llm_names: list[LLM]) -> LLMs:
 
     # Models will generate validated structured outputs.
     for llm in llms:
+        # noinspection PyUnresolvedReferences
         llms[llm] = prompt | llms[llm].with_structured_output(FallacyResponse, method='json_schema')
 
     return llms
