@@ -40,7 +40,7 @@ def fallacy_search(text: str, model = 'gpt-4o-2024-08-06') -> FallacyResponse:
     llm = ChatOpenAI(
         openai_api_key=os.getenv("OPENAI_API_KEY"),
         model=model,
-        temperature=0.7,  # Higher temperature might generate more identified fallacies
+        temperature=0.0,  # Higher temperature might generate more identified fallacies
         timeout=30.0,
         max_retries=2,
     )
@@ -105,5 +105,5 @@ Principles:
     return prompt
 
 
-def pretty_print_fallacies(fallacy_response: FallacyResponse):
-    print(json.dumps(fallacy_response.model_dump(mode='json')['fallacies'], indent=2, ensure_ascii=False))
+def get_fallacy_response_string(fallacy_response: FallacyResponse) -> str:
+    return json.dumps(fallacy_response.model_dump(mode='json'), indent=2, ensure_ascii=False)
