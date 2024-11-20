@@ -1,7 +1,0 @@
-/*
-Hide "Press Enter to Apply" text in text input
-https://discuss.streamlit.io/t/text-input-how-to-disable-press-enter-to-apply/14457/6
- */
-div[data-testid="InputInstructions"] > span:nth-child(1) {
-    visibility: hidden;
-}

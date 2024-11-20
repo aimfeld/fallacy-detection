@@ -24,5 +24,4 @@ dependencies:
   - langchain-mistralai
   - huggingface_hub
   - openai  # OpenAI API, used for fine-tuning
-  - streamlit
   - pip
