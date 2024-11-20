@@ -4,12 +4,46 @@ This module functions for dealing with the MAFALDA dataset and evaluation by Hel
 import pandas as pd
 import numpy as np
 import json
+import regex
 from copy import deepcopy
 from .utils import log
 from .constants import RESPONSE_ERROR
 from .mafalda_metrics.new_metrics import text_full_task_p_r_f1, AnnotatedText, PredictionSpan, GroundTruthSpan
 from .mafalda_metrics.evaluate import build_ground_truth_spans, LEVEL_2_NUMERIC, LEVEL_2_TO_1
-from .search import Fallacy, FallacyResponse, fuzzy_match
+from pydantic import BaseModel, Field
+from typing import List, Optional
+from enum import Enum
+
+
+class Fallacy(Enum):
+    """
+    MAFALDA fallacy types.
+    Fallacy search is restricted to these types so we can validate the results against the MAFALDA benchmark.
+    But it works perfectly well without restriction.
+    """
+    APPEAL_TO_ANGER = "Appeal to Anger"
+    APPEAL_TO_FEAR = "Appeal to Fear"
+    APPEAL_TO_PITY = "Appeal to Pity"
+    APPEAL_TO_POSITIVE_EMOTION = "Appeal to Positive Emotion"
+    APPEAL_TO_RIDICULE = "Appeal to Ridicule"
+    APPEAL_TO_WORSE_PROBLEMS = "Appeal to Worse Problems"
+    CAUSAL_OVERSIMPLIFICATION = "Causal Oversimplification"
+    CIRCULAR_REASONING = "Circular Reasoning"
+    EQUIVOCATION = "Equivocation"
+    FALLACY_OF_DIVISION = "Fallacy of Division"
+    FALSE_ANALOGY = "False Analogy"
+    FALSE_CAUSALITY = "False Causality"
+    FALSE_DILEMMA = "False Dilemma"
+    HASTY_GENERALIZATION = "Hasty Generalization"
+    SLIPPERY_SLOPE = "Slippery Slope"
+    STRAWMAN_FALLACY = "Strawman Fallacy"
+    AD_HOMINEM = "Ad Hominem"
+    AD_POPULUM = "Ad Populum"
+    APPEAL_TO_AUTHORITY = "Appeal to Authority"
+    APPEAL_TO_NATURE = "Appeal to Nature"
+    APPEAL_TO_TRADITION = "Appeal to Tradition"
+    GUILT_BY_ASSOCIATION = "Guilt by Association"
+    TU_QUOQUE = "Tu Quoque"
 
 # Map fallacies to string labels
 FALLACY_2_LABEL: dict[str, str] = {
@@ -39,6 +73,26 @@ FALLACY_2_LABEL: dict[str, str] = {
 }
 
 Span = tuple[int, int]
+
+class FallacyEntry(BaseModel):
+    """
+    A fallacy found in the MAFALDA dataset, spanning one or more sentences.
+    """
+    fallacy: Fallacy = Field(description="The identified fallacy.")
+    span: str = Field(
+        description="The verbatim text span where the fallacy occurs, consisting of one or more contiguous sentences.")
+    reason: str = Field(description="An explanation why the text span contains this fallacy.")
+    defense: Optional[str] = Field(
+        description="A counter-argument against the fallacy claim which explains how the argument could still be valid or reasonable.",
+        default=None)
+    confidence: float = Field(description="Confidence rating from 0.0 to 1.0.")
+
+
+class FallacyResponse(BaseModel):
+    """
+    A response from the LLMs for a given input text.
+    """
+    fallacies: List[FallacyEntry] = Field(default_factory=list, title="The list of fallacies found in the text.")
 
 
 def create_mafalda_df() -> pd.DataFrame:
@@ -95,7 +149,7 @@ def save_mafalda_df(df: pd.DataFrame, filename: str):
     df.to_csv(filename, index=False)
 
 
-def get_llm_metrics(df: pd.DataFrame, exclude_llms: list[str] = []) -> pd.DataFrame:
+def get_llm_metrics(df: pd.DataFrame, exclude_llms: list[str] = None) -> pd.DataFrame:
     """
     Calculates the mean precision, recall, and F1 score for each model.
 
@@ -111,7 +165,7 @@ def get_llm_metrics(df: pd.DataFrame, exclude_llms: list[str] = []) -> pd.DataFr
 
     for response_col in response_cols:
         llm_key = response_col.removesuffix('_response')
-        if llm_key in exclude_llms:
+        if exclude_llms is not None and llm_key in exclude_llms:
             continue
 
         mean_metric_cols = [f'{llm_key}_{metric}' for metric in mean_metrics]
@@ -191,7 +245,7 @@ def _evaluate_response(text: str, labels: list[list], fallacy_response: FallacyR
     for entry in fallacy_response.fallacies:
         if entry.confidence < confidence_threshold:
             continue
-        start, end = fuzzy_match(entry.span, text)
+        start, end = _fuzzy_match(entry.span, text)
         if start is not None and end is not None:
             label = LEVEL_2_NUMERIC[FALLACY_2_LABEL[entry.fallacy.value]]
             pred_spans.append(PredictionSpan(entry.span, label, [start, end]))
@@ -221,6 +275,23 @@ def _evaluate_response(text: str, labels: list[list], fallacy_response: FallacyR
         'mismatch_count': mismatch_count
     }
 
+def _fuzzy_match(span: str, text: str) -> tuple[int | None, int | None]:
+    """
+    Returns start and end indices of the first match of the span in the text, using fuzzy matching.
+    """
+    # Sometimes, the span is enclosed with '...some span bla bla...'
+    span = span.removeprefix('...').removesuffix('...')
+
+    # Sometimes, the model uses different quotation marks than the original text
+    text = text.replace('"', "'")
+    span = span.replace('"', "'")
+
+    # Allow a few differences
+    fuzzy_pattern = f'({regex.escape(span)}){{e<=5}}'
+    if match := regex.search(fuzzy_pattern, text, regex.BESTMATCH):
+        return match.start(), match.end()
+
+    return None, None
 
 def _get_uncovered_spans(covered_spans: list[Span], text_length: int) -> list[Span]:
     """

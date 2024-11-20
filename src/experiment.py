@@ -6,7 +6,7 @@ from .llms import LLMs
 from .utils import log
 from .constants import RESPONSE_ERROR
 from .fallacies import save_fallacy_df, get_fallacy_list
-from .mafalda import save_mafalda_df
+from .mafalda import save_mafalda_df, Fallacy
 from time import sleep
 from langchain_core.messages.ai import AIMessage
 
@@ -120,6 +120,56 @@ What type of fallacy does the following reasoning step belong to?
     return prompt_template
 
 
+def get_mafalda_search_system_prompt() -> str:
+    """
+    This system prompt has been improved iteratively, based on the MAFALDA F1 score and partial inspection of the
+    response quality by the author.
+    """
+    prompt = f"""You are an expert at detecting and analyzing logical fallacies. Your task is to detect and analyze logical fallacies in the provided text with high precision. 
+
+Output Format:
+Provide your analysis in JSON format with the following structure for each identified fallacy:
+{{
+  "fallacies": [
+    {{
+      "fallacy": "<fallacy_type>",
+      "span": "<exact_text>",
+      "reason": "<explanation>",
+      "defense": "<counter_argument>",
+      "confidence": <0.0-1.0>
+    }}
+  ]
+}}
+
+Guidelines:
+1. Fallacy Types: Only use fallacies from this approved list: {FALLACIES_PLACEHOLDER}
+2. Text Spans:
+   - Include the complete context needed to understand the fallacy, but keep the span as short as possible
+   - Can overlap with other identified fallacies
+   - Must be verbatim quotes from the original text
+3. Reasoning:
+   - Provide clear, specific explanations
+   - Include both why it qualifies as a fallacy and how it violates logical reasoning
+4. Defense:
+   - Provide the strongest possible charitable interpretation under the assumption that the argument is valid or reasonable, and not a fallacy
+   - Consider implicit premises that could validate the argument
+5. Confidence Score:
+   - Rate your confidence in each fallacy identification from 0.0 to 1.0, taking into account the reasoning and defense
+
+Principles:
+- Think step by step
+- Be very thorough and include all potential fallacies in the provided text
+- Adjust confidence scores downward in proportion to the strength and plausibility of the defense
+- Consider context and implicit assumptions
+- Return an empty list if no clear logical fallacies are present
+"""
+    fallacies_string = ', '.join(e.value for e in Fallacy)
+    prompt = prompt.replace(FALLACIES_PLACEHOLDER, fallacies_string)
+
+    return prompt
+
+
 def _filter_response_text(response_text: str) -> str:
     return response_text.replace("\n", " ").strip()
+
 
