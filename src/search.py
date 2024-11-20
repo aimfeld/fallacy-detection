@@ -1,6 +1,6 @@
 """
 This module contains the logic for fallacy search, where an LLM is used to detect and analyze multiple logical fallacies
-in a given text.
+in a given text. This is an extended version and not used in the experiments.
 """
 
 from pydantic import BaseModel, Field
@@ -33,6 +33,23 @@ class FallacyResponse(BaseModel):
     fallacies: List[FallacyEntry] = Field(default_factory=list, title="The list of fallacies found in the text.")
     summary: str = Field(description="An overall summary of the logical reasoning quality.")
     rating: Optional[int] = Field(description="A rating of the overall logical reasoning quality from 1 to 10.")
+
+
+# noinspection PyArgumentList
+def fallacy_search(text: str, model = 'gpt-4o-2024-08-06') -> FallacyResponse:
+    llm = ChatOpenAI(
+        openai_api_key=os.getenv("OPENAI_API_KEY"),
+        model=model,
+        temperature=0.7,  # Higher temperature might generate more identified fallacies
+        timeout=30.0,
+        max_retries=2,
+    )
+    prompt = ChatPromptTemplate.from_messages([('system', '{system_prompt}'), ('user', '{input}')])
+
+    # Models will generate validated structured outputs.
+    pipe = prompt | llm.with_structured_output(FallacyResponse, method='json_schema')
+
+    return pipe.invoke({'system_prompt': get_search_system_prompt(), 'input': text})
 
 
 def get_search_system_prompt() -> str:
@@ -86,23 +103,6 @@ Principles:
 """
 
     return prompt
-
-
-# noinspection PyArgumentList
-def fallacy_search(text: str, model = 'gpt-4o-2024-08-06') -> FallacyResponse:
-    llm = ChatOpenAI(
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
-        model=model,
-        temperature=0.7,  # Higher temperature might generate more identified fallacies
-        timeout=30.0,
-        max_retries=2,
-    )
-    prompt = ChatPromptTemplate.from_messages([('system', '{system_prompt}'), ('user', '{input}')])
-
-    # Models will generate validated structured outputs.
-    pipe = prompt | llm.with_structured_output(FallacyResponse, method='json_schema')
-
-    return pipe.invoke({'system_prompt': get_search_system_prompt(), 'input': text})
 
 
 def pretty_print_fallacies(fallacy_response: FallacyResponse):
