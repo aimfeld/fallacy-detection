@@ -2,6 +2,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from src.search import fallacy_search, FallacyResponse
 
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -19,11 +20,29 @@ def show_about_page():
     """Display the About page content."""
     st.header("About Fallacy Search")
     st.write("""
-    This is a dummy about page for the Fallacy Search application. 
-
-    The application is designed to help users identify potential logical fallacies in their text. 
-    Simply enter your text in the main page, and our system will analyze it for common logical fallacies.
+    The Fallacy Search application is designed to help users identify potential logical fallacies in any text. 
+    It uses GPT-4o to detect and analyze common reasoning errors and argumentative flaws.
+    The tool aims to promote critical thinking and improve the quality of public discourse by making logical analysis 
+    more accessible.
+    
+    Fallacy Search has been developed and benchmark tested by Adrian Imfeld as part of a data science master thesis at 
+    Lucerne University of Applied Sciences and Arts (HSLU). For more information, see GitHub link below.
     """)
+
+    st.write("Potential Applications:")
+    st.markdown("""
+    - Journalism and fact-checking
+    - Highlighting manipulative content and propaganda  
+    - Analyzing blog posts and content on social media
+    - Identifying weaknesses in legal arguments and court decisions
+    - Flagging pseudoscience and unsound marketing
+    """)
+    st.write('👤 Author: Adrian Imfeld')
+    st.write('📧 E-Mail: aimfeld@aimfeld.ch')
+    st.write('🔗 GitHub: [aimfeld/fallacy-detection](https://github.com/aimfeld/fallacy-detection)')
+
+def get_star_rating(rating: int):
+    return '⭐' * rating + '☆' * (10 - rating)
 
 
 def show_main_page():
@@ -52,25 +71,40 @@ def show_main_page():
 
     if st.session_state.processing:
         with st.spinner('Processing...'):
-            response = fallacy_search(user_input, model = 'gpt-4o-mini-2024-07-18')
+            # response = fallacy_search(user_input, model = 'gpt-4o-mini-2024-07-18')
+            response = fallacy_search(user_input)
             st.session_state.response = response
             st.session_state.processing = False
             st.rerun()
 
     if not st.session_state.processing and st.session_state.response:
         response: FallacyResponse = st.session_state.response
-        for fallacy in response.fallacies:
-            st.write(f"Fallacy: {fallacy.fallacy}")
-            st.write(f"Definition: {fallacy.definition}")
-            st.write(f"Span: {fallacy.span}")
-            st.write(f"Reason: {fallacy.reason}")
-            if fallacy.defense:
-                st.write(f"Defense: {fallacy.defense}")
-            st.write(f"Confidence: {fallacy.confidence}")
-            st.write("")
-        st.write(f"Summary: {response.summary}")
-        if response.rating:
-            st.write(f"Rating: {response.rating}")
+        # Create a container for better spacing
+        with st.container():
+            if response.fallacies:
+                st.markdown("### Detected Fallacies")
+                # Display each fallacy in an expander
+                for i, fallacy in enumerate(response.fallacies, 1):
+                    with st.expander(f'🎯 **Fallacy #{i}: {fallacy.fallacy}**', expanded=True):
+                        st.markdown(f'**{fallacy.fallacy}:** {fallacy.definition}')
+                        st.markdown(f'**Quote:** _“{fallacy.span}”_')
+                        st.markdown(f'**Reason:** {fallacy.reason}')
+                        if fallacy.defense:
+                            st.markdown(f'**Defense:** {fallacy.defense}')
+                        st.markdown(f'**Confidence:** {fallacy.confidence * 100:.0f}%')
+
+                # Display summary and rating in a separate container
+                st.markdown("---")
+
+            st.markdown("### Overall Analysis")
+            st.markdown("**📝 Summary**")
+            st.markdown(response.summary)
+
+            st.markdown(f'**⭐ Reasoning Score**')
+            if response.rating:
+                st.markdown(f'{get_star_rating(response.rating)} ({response.rating} out of 10)')
+            else:
+                st.markdown("Not rated since the text seems to contain no arguments.")
 
 
 def main():
