@@ -211,6 +211,7 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
     # -------------------------------------------------------------------------
     # Google
     # https://python.langchain.com/docs/integrations/chat/google_generative_ai/
+    # https://ai.google.dev/gemini-api/docs/models/gemini
     # https://aistudio.google.com/app/apikey
     # https://console.cloud.google.com/billing
     # -------------------------------------------------------------------------
