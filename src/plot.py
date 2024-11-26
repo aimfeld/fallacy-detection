@@ -5,7 +5,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from IPython.display import display
 from .analysis import add_llm_info
 
 DPI = 600 # Quality of saved .png
@@ -130,7 +129,8 @@ def save_plot(title: str):
     plt.savefig(f'plot/{filename}.png', dpi=DPI, bbox_inches='tight')
 
 
-def display_llm_table(df: pd.DataFrame, digits: int = 3):
+def display_llm_table(df: pd.DataFrame, digits: int = 3) -> pd.DataFrame:
     """Display a table which has an llm-key index."""
-    df_display = add_llm_info(df, label=True).set_index('llm_label', drop=True)
-    display(df_display.round(digits))
+    df_display = add_llm_info(df.copy(), label=True).set_index('llm_label', drop=True)
+
+    return df_display.round(digits)
