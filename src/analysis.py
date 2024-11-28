@@ -239,30 +239,33 @@ def get_confusion_metrics(df_confusion_matrix: pd.DataFrame) -> pd.DataFrame:
     Calculate confusion matrix metrics for each label
     """
     # Get diagonal elements (true positives)
-    true_positives = np.diag(df_confusion_matrix)
+    tp = np.diag(df_confusion_matrix)
 
     # Calculate total samples
     total_samples = df_confusion_matrix.sum().sum()
 
     # False positives and false negatives
-    false_positives = df_confusion_matrix.sum(axis=1) - true_positives
-    false_negatives = df_confusion_matrix.sum(axis=0) - true_positives
+    fp = df_confusion_matrix.sum(axis=1) - tp
+    fn = df_confusion_matrix.sum(axis=0) - tp
 
     # True negatives (sum of all correct predictions for other classes)
-    true_negatives = total_samples - (true_positives + false_positives + false_negatives)
+    tn = total_samples - (tp + fp + fn)
 
     # Calculate metrics
-    accuracy = (true_positives + true_negatives) / total_samples
-    precision = true_positives / (true_positives + false_positives)
-    recall = true_positives / (true_positives + false_negatives)
+    accuracy = (tp + tn) / total_samples
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
     f1_score = 2 * (precision * recall) / (precision + recall)
-    p_mcnemar = [mcnemar_test(fp, fn) for fp, fn in zip(false_positives, false_negatives)]
+    p_mcnemar = [mcnemar_test(fp, fn) for fp, fn in zip(fp, fn)]
 
     df_results = pd.DataFrame({
-        'tp': true_positives,
-        'tn': true_negatives,
-        'fp': false_positives,
-        'fn': false_negatives,
+        'tp': tp,
+        'tn': tn,
+        'fp': fp,
+        'fn': fn,
+        # fp/fn is equivalent to fpr/fnr ratio, if class sizes are equal
+        'fp/fn': np.round(fp / fn, 1),
+        # 'fpr/fnr': (fp / (fp + tn)) / (fn / (fn + tp)),
         'accuracy': accuracy,
         'precision': precision,
         'recall': recall,
