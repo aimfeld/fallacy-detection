@@ -1,1 +1,1 @@
-# fallacy-detection
+# Detecting Logical Fallacies with LLMs
