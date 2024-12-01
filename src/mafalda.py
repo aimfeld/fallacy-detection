@@ -349,6 +349,7 @@ def _get_level_label(label_level_2: int | None, level: int | None) -> int | None
 
     # None labels mark uncovered spans in gold standard annotations. It's unclear why None labels are converted to
     # None on level 1, but to 0 on level 0. However, we follow the implementation in evaluate.py by Helwe et al. (2024).
+    # If no uncovered text spans are added, the inconsistency doesn't matter, since there are no None labels.
     if level == 1:
         return None if label_level_2 is None else LEVEL_2_TO_1[label_level_2]
     elif level == 0:
