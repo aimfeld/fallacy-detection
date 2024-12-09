@@ -60,3 +60,21 @@ def get_hong_table(df_subcategory_accuracies: pd.DataFrame, df_category_accuraci
     df.index.name = 'Model'
 
     return df
+
+def get_fallacy_search_table(df_metrics: pd.DataFrame, df_metrics_subset: pd.DataFrame) -> pd.DataFrame:
+    df = df_metrics.join(df_metrics_subset, rsuffix='_subset').sort_values('f1_l2', ascending=False)
+    col_labels = {
+        'f1_l0': 'F1 Level 0',
+        'f1_l1': 'F1 Level 1',
+        'f1_l2': 'F1 Level 2',
+        'f1_l0_subset': 'F1 Level 0 (Subset)',
+        'f1_l1_subset': 'F1 Level 1 (Subset)',
+        'f1_l2_subset': 'F1 Level 2 (Subset)',
+    }
+
+    df = df[col_labels.keys()]
+    df.columns = col_labels.values()
+    df = display_llm_table(df, digits=3)
+    df.index.name = 'Model'
+
+    return df
