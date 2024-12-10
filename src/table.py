@@ -33,6 +33,7 @@ CONFUSION_METRICS_LABELS = {
     'p_mcnemar': 'P-McNemar',
 }
 
+
 def display_llm_table(df: pd.DataFrame, digits: int = 3) -> pd.DataFrame:
     """Display a table which has an llm-key index."""
     df_display = add_llm_info(df.copy(), label=True).set_index('llm_label', drop=True)
@@ -50,7 +51,8 @@ def get_llm_confusion_metrics_table(df_llm_confusion_metrics: pd.DataFrame) -> p
     return df
 
 
-def get_hong_table(df_subcategory_accuracies: pd.DataFrame, df_category_accuracies: pd.DataFrame, df_overall_accuracies: pd.DataFrame) -> pd.DataFrame:
+def get_hong_table(df_subcategory_accuracies: pd.DataFrame, df_category_accuracies: pd.DataFrame,
+                   df_overall_accuracies: pd.DataFrame) -> pd.DataFrame:
     """Get the Hong et al. 2024 table."""
     df = df_subcategory_accuracies.droplevel(0, axis=1)
     df = df.join(df_category_accuracies).join(df_overall_accuracies)
@@ -61,7 +63,9 @@ def get_hong_table(df_subcategory_accuracies: pd.DataFrame, df_category_accuraci
 
     return df
 
+
 def get_fallacy_search_table(df_metrics: pd.DataFrame, df_metrics_subset: pd.DataFrame) -> pd.DataFrame:
+    """Get the fallacy search table with 3 levels and subset metrics."""
     df = df_metrics.join(df_metrics_subset, rsuffix='_subset').sort_values('f1_l2', ascending=False)
     col_labels = {
         'f1_l0': 'F1 Level 0',
