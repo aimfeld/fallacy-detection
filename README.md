@@ -7,7 +7,7 @@
 
 This repository contains the code and data for the data science master's thesis "Detecting Logical Fallacies with LLMs". The thesis was written and submitted in December 2024 by Adrian Imfeld at the Lucerne University of Applied Sciences and Arts (HSLU) in Switzerland. For more information, please refer to the thesis document linked above.
 
-These are the main notebooks in this repository:
+These are the most important notebooks in this repository. The notebooks only display output and import most code from modules in the [src](src) directory:
 
 - [fallacy_experiments.ipynb](fallacy_experiments.ipynb): Code for the fallacy identification, classification, and search experiments.
 - [fallacy_identification.ipynb](fallacy_identification.ipynb): Data analysis for the binary fallacy identification experiments.
