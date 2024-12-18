@@ -1,6 +1,7 @@
 .env
 /fallacy-detection-438712-db75e64bb2f9.json
 test.ipynb
+add_toc.py
 Chat_finetuning_data_prep.ipynb
 datasets/FALLACIES/fallacies_reformat.json
 data/fallacies_e11_human_empty.csv
