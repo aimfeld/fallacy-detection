@@ -11,6 +11,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 from langchain_mistralai import ChatMistralAI
+from langchain_ollama import ChatOllama
 from enum import Enum
 
 
@@ -20,6 +21,7 @@ class LLMProvider(Enum):
     GOOGLE = "Google"
     META = "Meta"
     MISTRAL_AI = "Mistral AI"
+    DEEPSEEK = "DeepSeek"
     NONE = "None"
 
 
@@ -50,6 +52,7 @@ class LLM(Enum):
     LLAMA_3_1_8B = ("llama_3_1_8b", "Llama 3.1 8B", LLMGroup.SMALL, LLMProvider.META)
     MISTRAL_LARGE_2 = ("mistral_large_2", "Mistral Large", LLMGroup.LARGE, LLMProvider.MISTRAL_AI) # 123B
     MISTRAL_SMALL_2 = ("mistral_small_2", "Mistral Small", LLMGroup.SMALL, LLMProvider.MISTRAL_AI) # 22B
+    DEEPSEEK_R1_14B = ("deepseek_r1_14b", "DeepSeek R1 14B", LLMGroup.REASONING, LLMProvider.DEEPSEEK)
 
     # Human
     ADRIAN = ("adrian", "Adrian", LLMGroup.HUMAN, LLMProvider.NONE)
@@ -296,6 +299,16 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
             timeout=30.0, # This API times out a lot
             max_retries=5,
         )
+
+    # -------------------------------------------------------------------------
+    # DeepSeek
+    # -------------------------------------------------------------------------
+    if LLM.DEEPSEEK_R1_14B in llm_names:
+        llms[LLM.DEEPSEEK_R1_14B] = ChatOllama(
+        model="deepseek-r1:14b",
+        temperature=0,
+    )
+
 
     return llms
 

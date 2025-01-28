@@ -67,6 +67,8 @@ def _get_identification_prediction(response: str) -> Union[int, pd.NA]:
     """
     Return the identification prediction (0=Yes, 1=No) based on the response.
     """
+    # Remove <think>...</think> blocks from the response (deepseek chain of thought reasoning)
+    response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
 
     # The model don't seem to respond in lowercase yes or no. But in chain-of-thought prompt
     # responses, the reasoning sometimes contains the word "no", when the final answer is "Yes".
