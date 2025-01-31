@@ -63,7 +63,7 @@ def run_experiment(df: pd.DataFrame, filename: str, prompt_template: str, llms: 
             if response_count % 100 == 0:
                 log(f"Processed {response_count} responses for LLM {llm.key} (index={index}).")
 
-            if error_count > 30:
+            if error_count > 300:
                 log(f"Error count too high for LLM {llm.key}, skipping model.")
                 break
 
