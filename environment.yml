@@ -22,7 +22,9 @@ dependencies:
   - langchain-google-genai
   - langchain-huggingface
   - langchain-mistralai
-  - langchain-ollama # For running ollama models like deepseek
+  - langchain-deepseek-official
   - huggingface_hub
   - openai  # OpenAI API, used for fine-tuning
   - pip
+  - pip:
+    - langchain-ollama # For running ollama models like deepseek

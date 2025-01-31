@@ -21,3 +21,5 @@ dependencies:
   - huggingface_hub=0.24.6
   - openai=1.51.2  # OpenAI API, used for fine-tuning
   - pip=24.2
+  - pip:
+    - langchain-ollama==0.2.2 # For running ollama models like deepseek
