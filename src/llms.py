@@ -11,7 +11,9 @@ from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 from langchain_mistralai import ChatMistralAI
-from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama # For running DeepSeek model locally
+from openai import OpenAI
+from .deepseek import CustomDeepSeekChatModel
 from enum import Enum
 
 
@@ -53,6 +55,7 @@ class LLM(Enum):
     MISTRAL_LARGE_2 = ("mistral_large_2", "Mistral Large", LLMGroup.LARGE, LLMProvider.MISTRAL_AI) # 123B
     MISTRAL_SMALL_2 = ("mistral_small_2", "Mistral Small", LLMGroup.SMALL, LLMProvider.MISTRAL_AI) # 22B
     DEEPSEEK_R1_14B = ("deepseek_r1_14b", "DeepSeek R1 14B", LLMGroup.REASONING, LLMProvider.DEEPSEEK)
+    DEEPSEEK_R1_671B = ("deepseek_r1_671b", "DeepSeek R1 671B", LLMGroup.REASONING, LLMProvider.DEEPSEEK)
 
     # Human
     ADRIAN = ("adrian", "Adrian", LLMGroup.HUMAN, LLMProvider.NONE)
@@ -303,11 +306,29 @@ def get_llms(llm_names: list[LLM]) -> LLMs:
     # -------------------------------------------------------------------------
     # DeepSeek
     # -------------------------------------------------------------------------
+    # DeepSeek R1 14B runs locally with a NVIDIA 4060/8GB GPU
     if LLM.DEEPSEEK_R1_14B in llm_names:
         llms[LLM.DEEPSEEK_R1_14B] = ChatOllama(
         model="deepseek-r1:14b",
         temperature=0,
     )
+
+    if LLM.DEEPSEEK_R1_671B in llm_names:
+        openai_client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=os.getenv("OPENROUTER_API_KEY"))
+        llms[LLM.DEEPSEEK_R1_671B] = CustomDeepSeekChatModel(openai_client)
+
+
+    # if LLM.DEEPSEEK_R1_671B in llm_names:
+    #     llms[LLM.DEEPSEEK_R1_671B] = ChatOpenAI(
+    #         base_url="https://openrouter.ai/api/v1",
+    #         openai_api_key=os.getenv("OPENROUTER_API_KEY"),
+    #         model="deepseek/deepseek-r1",
+    #         extra_body={"include_reasoning": True}, # See https://github.com/huggingface/chat-ui/issues/1664
+    #         max_tokens=1024,
+    #         temperature=0,
+    #         timeout=120.0,
+    #         max_retries=2,
+    #     )
 
 
     return llms
@@ -380,3 +401,5 @@ def _get_chat_hugging_face(llm: HuggingFaceEndpoint) -> Runnable:
         max_tokens=4096, # Prevent cutoff for CoT prompt answers
         temperature=0.0
     ).with_retry(stop_after_attempt=3)
+
+
