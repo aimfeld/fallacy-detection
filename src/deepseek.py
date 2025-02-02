@@ -33,7 +33,7 @@ class CustomDeepSeekChatModel(BaseChatModel):
             model=self.model_name,
             messages=chat_messages,
             extra_body={"include_reasoning": True},
-            max_tokens=2048
+            max_tokens=4096
         )
 
         # Extract reasoning and final content
